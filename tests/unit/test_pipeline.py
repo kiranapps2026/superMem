@@ -96,7 +96,8 @@ class TestM0Normalization:
         assert result.messages[0].content == "real"
 
     def test_unsupported_source_type_raises(self):
-        with pytest.raises(ValueError, match="Unsupported"):
+        from app.services.connectors import ConnectorError
+        with pytest.raises(ConnectorError, match="Unknown connector"):
             normalize("test", source_type="unknown")
 
     def test_external_id_stored(self):

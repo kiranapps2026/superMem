@@ -14,6 +14,11 @@ from sqlalchemy.pool import NullPool
 from app.db import Base
 from app.main import app
 
+# Disable rate limiter for all tests
+from app.middleware.rate_limit import _rate_limiter
+_rate_limiter._disabled_for_testing = True
+_rate_limiter._windows.clear()
+
 TEST_DATABASE_URL = (
     "postgresql+asyncpg://swarmvault:swarmvault@localhost:5432/swarmvault_test"
 )
@@ -53,7 +58,7 @@ async def db_session(_engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture
 async def client(db_session: AsyncSession):
-    """AsyncClient with DB dependency override."""
+    """AsyncClient with DB dependency override and test mode."""
     async def _override_get_db():
         yield db_session
 

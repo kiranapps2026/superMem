@@ -185,6 +185,7 @@ class Session(Base):
         DateTime(timezone=True), nullable=True
     )
     user: Mapped["User"] = relationship("User", back_populates="sessions")
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="session", cascade="all, delete-orphan")
 
 
 class Message(Base):
@@ -202,6 +203,7 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    session: Mapped["Session"] = relationship("Session", back_populates="messages")
 
 
 class Project(Base):
@@ -308,6 +310,9 @@ class Source(Base):
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)
     external_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, index=True
+    )
+    content_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
     )
     title: Mapped[str | None] = mapped_column(String(500), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -668,4 +673,44 @@ class MessageFeedback(Base):
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+
+
+class ApiKey(Base):
+    """API key for MCP server registration (Sprint 6)."""
+
+    __tablename__ = "api_keys"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    key_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    key_prefix: Mapped[str] = mapped_column(
+        String(8), nullable=False
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    key_extra: Mapped[dict | None] = mapped_column("key_extra", JSON, nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("ix_api_keys_workspace", "workspace_id"),
+        Index("ix_api_keys_user", "user_id"),
     )

@@ -554,13 +554,15 @@ class TestDuplicateIngestion:
         )
         assert resp2.status_code == 201
 
-        # Two sources created (different ingestion runs)
+        # Content-hash dedup: second upload returns existing source
+        assert resp2.status_code in (200, 201)
         sources_resp = await client.get(
             "/api/v1/ingest/sources",
             headers=_headers(token),
         )
         sources = sources_resp.json()["items"]
-        assert len(sources) >= 2, "Two sources should be created for two uploads"
+        # After dedup fix: same content reuses existing source
+        assert len(sources) == 1, f"Expected 1 source after dedup, got {len(sources)}"
 
         # But facts are deduplicated — only one fact for "Project Alpha uses PostgreSQL"
         facts_resp = await client.get(

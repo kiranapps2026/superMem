@@ -36,7 +36,11 @@ async def upload_and_ingest(
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a conversation and run the full M0→M1→M2→M3→M4 pipeline."""
+    """Upload a conversation and run the full M0→M1→M2→M3→M4 pipeline.
+
+    Deduplication: if content with the same hash was already ingested for this
+    workspace, the existing source is returned without reprocessing.
+    """
     # Verify project exists in this workspace
     proj_result = await db.execute(
         select(Project).where(
@@ -47,6 +51,25 @@ async def upload_and_ingest(
     )
     if proj_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    # Content-hash dedup: skip re-processing identical content
+    import hashlib
+    content_hash = hashlib.sha256(data.content.encode("utf-8")).hexdigest()
+    existing = await db.execute(
+        select(Source).where(
+            Source.workspace_id == tc.workspace_id,
+            Source.content_hash == content_hash,
+        )
+    )
+    dup = existing.scalar_one_or_none()
+    if dup:
+        # Return existing source data without re-running pipeline
+        return IngestUploadResponse(
+            source_id=dup.id,
+            status=dup.status,
+            stage=dup.stage,
+            message=f"Duplicate content (hash {dup.content_hash[:12]}...), reusing existing source",
+        )
 
     # Validate content size (already bounded by schema max_length)
     from app.services.pipeline import run_pipeline
@@ -61,6 +84,13 @@ async def upload_and_ingest(
         title=data.title,
         config=data.config,
     )
+    # Tag the source with the content hash for future dedup
+    source_id = result.get("source_id")
+    if source_id:
+        src = await db.get(Source, source_id)
+        if src:
+            src.content_hash = content_hash
+            await db.commit()
     return IngestUploadResponse(**result)
 
 

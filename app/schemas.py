@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Any, Literal
 
@@ -186,12 +186,26 @@ class ChatResponse(BaseModel):
 
 # Memory
 class MemoryCreate(BaseModel):
-    content: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1, max_length=1_000_000)
     memory_type: str = Field(default="procedural_memory", max_length=50)
     agent_id: str | None = None
     run_id: str | None = None
     project_id: str | None = None
     extra_metadata: dict[str, Any] | None = None
+
+    @field_validator("content")
+    @classmethod
+    def no_null_bytes(cls, v: str) -> str:
+        if "\x00" in v:
+            raise ValueError("Content contains null bytes")
+        return v
+
+    @field_validator("content")
+    @classmethod
+    def strip_whitespace_only(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Content cannot be whitespace only")
+        return v
 
 
 class MemoryUpdate(BaseModel):
@@ -199,6 +213,13 @@ class MemoryUpdate(BaseModel):
     memory_type: str | None = None
     project_id: str | None = None
     temporal_status: str | None = None
+
+    @field_validator("content")
+    @classmethod
+    def no_null_bytes(cls, v: str | None) -> str | None:
+        if v is not None and "\x00" in v:
+            raise ValueError("Content contains null bytes")
+        return v
 
 
 class MemoryOut(BaseModel):
@@ -365,16 +386,17 @@ class IngestUploadRequest(BaseModel):
 class IngestUploadResponse(BaseModel):
     """Response from starting an ingestion."""
     source_id: str
-    session_id: str
-    status: str
-    stage: str | None
-    messages_processed: int
-    facts_created: int
-    decisions_created: int
-    graph_nodes_created: int
-    graph_edges_created: int
+    session_id: str | None = None
+    status: str | None = None
+    stage: str | None = None
+    messages_processed: int = 0
+    facts_created: int = 0
+    decisions_created: int = 0
+    graph_nodes_created: int = 0
+    graph_edges_created: int = 0
     topics: list[str] = []
     entities: list[str] = []
+    message: str | None = None
 
 
 # Facts
@@ -559,3 +581,22 @@ class ProjectDashboard(BaseModel):
     total_graph_nodes: int
     total_feedback: int
     memory_types: dict[str, int]
+
+
+# ── API Keys (Sprint 6) ──────────────────────────────────────────────────
+
+
+class ApiKeyOut(BaseModel):
+    """API key list item — raw key is never exposed."""
+    id: str
+    name: str
+    description: str | None = None
+    key_prefix: str
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    created_at: datetime
+    revoked_at: datetime | None = None
+    key_extra: dict[str, str] | None = None
+
+    class Config:
+        from_attributes = True
