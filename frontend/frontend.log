@@ -1,0 +1,49 @@
+   ▲ Next.js 15.5.24
+   - Local:        http://localhost:3000
+   - Network:      http://103.180.237.99:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 4.4s
+ ○ Compiling / ...
+ ✓ Compiled / in 6.6s (636 modules)
+ GET / 200 in 7325ms
+ ✓ Compiled in 447ms (254 modules)
+ ✓ Compiled in 351ms (254 modules)
+ ✓ Compiled in 303ms (254 modules)
+ ✓ Compiled in 577ms (254 modules)
+ ✓ Compiled in 189ms (254 modules)
+ ✓ Compiled in 231ms (254 modules)
+ ✓ Compiled in 155ms (254 modules)
+ ✓ Compiled in 632ms (254 modules)
+ ✓ Compiled in 287ms (254 modules)
+ ✓ Compiled in 138ms (254 modules)
+ ✓ Compiled in 199ms (254 modules)
+ ✓ Compiled in 136ms (254 modules)
+ ✓ Compiled in 249ms (254 modules)
+ ✓ Compiled in 264ms (254 modules)
+ ✓ Compiled in 371ms (254 modules)
+ ✓ Compiled in 134ms (254 modules)
+ ✓ Compiled in 234ms (254 modules)
+ ✓ Compiled in 305ms (254 modules)
+ ✓ Compiled in 288ms (254 modules)
+ ✓ Compiled in 243ms (254 modules)
+ ✓ Compiled in 271ms (254 modules)
+ ✓ Compiled in 163ms (254 modules)
+ ✓ Compiled in 220ms (254 modules)
+ ✓ Compiled in 276ms (254 modules)
+ ✓ Compiled in 279ms (254 modules)
+ ✓ Compiled in 514ms (254 modules)
+ ✓ Compiled in 136ms (254 modules)
+ ✓ Compiled in 133ms (254 modules)
+ ✓ Compiled in 287ms (254 modules)
+ ✓ Compiled in 156ms (254 modules)
+ ✓ Compiled in 250ms (254 modules)
+ ✓ Compiled in 304ms (254 modules)
+ ✓ Compiled in 291ms (254 modules)
+ ✓ Compiled in 285ms (254 modules)
+ ✓ Compiled in 157ms (254 modules)
+ ✓ Compiled in 267ms (254 modules)
+ ✓ Compiled in 136ms (254 modules)
+ ✓ Compiled in 318ms (254 modules)
+ ✓ Compiled in 286ms (254 modules)

@@ -1,11 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { SessionHistory } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
 import { User, Bot } from 'lucide-react';
+
+interface SessionHistory {
+  session_id: string;
+  title: string | null;
+  source: string;
+  messages: { id: string; role: string; content: string; created_at: string | null }[];
+}
 
 export default function SessionDetailPage() {
   const { user } = useAuth();
@@ -17,10 +23,10 @@ export default function SessionDetailPage() {
 
   useEffect(() => {
     if (!user) return;
-    apiGet<SessionHistory>(`/api/v1/projects/${projectId}/sessions/${sessionId}`).then((h) => { setHistory(h); setLoading(false); }).catch(() => setLoading(false));
-  }, [user, projectId, sessionId]);
+    apiGet<SessionHistory>(`/api/v1/sessions/${sessionId}/history`).then(setHistory).catch(() => {}).finally(() => setLoading(false));
+  }, [user, sessionId]);
 
-  if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-gray-500">Loading…</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-gray-500">Loading...</div></div>;
   if (!history) return <div className="flex items-center justify-center h-full"><p className="text-gray-500 text-sm">Session not found.</p></div>;
 
   return (

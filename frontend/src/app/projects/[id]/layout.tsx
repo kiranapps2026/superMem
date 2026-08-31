@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { Project, ProjectDetail, ProjectUpdate } from '@/types/api';
+import { Project } from '@/types/api';
 import { apiGet, apiPatch, apiDelete } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
@@ -11,7 +11,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const { user } = useAuth();
   const params = useParams();
   const projectId = params.id as string;
-  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -20,7 +20,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!projectId || !user) return;
-    apiGet<ProjectDetail>(`/api/v1/projects/${projectId}`).then((p) => {
+    apiGet<Project>(`/api/v1/projects/${projectId}`).then((p) => {
       setProject(p); setEditName(p.name); setEditDesc(p.description || ''); setLoading(false);
     }).catch(() => setLoading(false));
   }, [projectId, user]);
@@ -28,11 +28,11 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const saveProject = async (e: FormEvent) => {
     e.preventDefault(); setSaving(true);
     try {
-      const data: ProjectUpdate = {};
+      const data: { name?: string; description?: string | null } = {};
       if (editName !== project?.name) data.name = editName;
       if (editDesc !== (project?.description || '')) data.description = editDesc;
       if (Object.keys(data).length) {
-        const updated = await apiPatch<ProjectDetail>(`/api/v1/projects/${projectId}`, data);
+        const updated = await apiPatch<Project>(`/api/v1/projects/${projectId}`, data);
         setProject(updated);
       }
       setEditing(false);
@@ -66,6 +66,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
               <Link href={`/projects/${projectId}/decisions`} className="block px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded">Decisions</Link>
               <Link href={`/projects/${projectId}/timeline`} className="block px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded">Timeline</Link>
               <Link href={`/projects/${projectId}/search`} className="block px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded">Search</Link>
+              <Link href={`/projects/${projectId}/graph`} className="block px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded">Graph</Link>
             </div>
             <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-0.5">
               <button onClick={() => setEditing(true)} className="w-full text-left flex items-center gap-2 px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded"><Settings size={12} /> Settings</button>

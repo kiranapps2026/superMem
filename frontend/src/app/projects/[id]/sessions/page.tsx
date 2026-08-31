@@ -1,25 +1,33 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { SessionInfo } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
 import { MessageSquare, ChevronRight } from 'lucide-react';
 
+interface SessionListItem {
+  id: string;
+  title: string | null;
+  created_at: string | null;
+  extra_metadata: Record<string, unknown> | null;
+}
+
 export default function SessionsPage() {
   const { user } = useAuth();
   const params = useParams();
   const projectId = params.id as string;
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [sessions, setSessions] = useState<SessionListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    apiGet<SessionInfo[]>(`/api/v1/projects/${projectId}/sessions`).then((s) => { setSessions(s); setLoading(false); }).catch(() => setLoading(false));
-  }, [user, projectId]);
+    apiGet<SessionListItem[]>('/api/v1/sessions').then((s) => { setSessions(s); setLoading(false); }).catch(() => setLoading(false));
+  }, [user]);
 
   if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-gray-500">Loading…</div></div>;
+
+  const metaFor = (s: SessionListItem) => s.extra_metadata || {};
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -33,7 +41,7 @@ export default function SessionsPage() {
                 <MessageSquare size={16} className="text-gray-500" />
                 <div>
                   <p className="text-sm font-medium">{s.title || 'Untitled session'}</p>
-                  <p className="text-xs text-gray-500">{s.source} &middot; {s.message_count} messages</p>
+                  <p className="text-xs text-gray-500">{(metaFor(s) as any).source || 'chat'} &middot; {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-gray-500" />

@@ -1,9 +1,21 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db import init_db
-from app.api import auth, workspace, projects, sessions, chat, memory, ingest
+from app.api import auth, workspace, projects, sessions, chat, memory, ingest, provenance, dashboard, feedback
+
+api_v1 = APIRouter(prefix="/api/v1")
+api_v1.include_router(auth.router)
+api_v1.include_router(workspace.router)
+api_v1.include_router(projects.router)
+api_v1.include_router(sessions.router)
+api_v1.include_router(chat.router)
+api_v1.include_router(memory.router)
+api_v1.include_router(ingest.router)
+api_v1.include_router(provenance.router)
+api_v1.include_router(dashboard.router)
+api_v1.include_router(feedback.router)
 
 
 @asynccontextmanager
@@ -25,13 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(workspace.router)
-app.include_router(projects.router)
-app.include_router(sessions.router)
-app.include_router(chat.router)
-app.include_router(memory.router)
-app.include_router(ingest.router)
+app.include_router(api_v1)
 
 
 @app.get("/health")

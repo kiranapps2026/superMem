@@ -1,0 +1,83 @@
+INFO:     Started server process [19968]
+INFO:     Waiting for application startup.
+2026-08-30 19:01:17,634 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-08-30 19:01:17,634 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-30 19:01:17,636 INFO sqlalchemy.engine.Engine select current_schema()
+2026-08-30 19:01:17,636 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-30 19:01:17,638 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-08-30 19:01:17,638 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-30 19:01:17,639 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-30 19:01:17,644 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,645 INFO sqlalchemy.engine.Engine [generated in 0.00028s] ('tenants', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,653 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,653 INFO sqlalchemy.engine.Engine [cached since 0.008884s ago] ('workspaces', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,654 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,654 INFO sqlalchemy.engine.Engine [cached since 0.009798s ago] ('users', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,655 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,655 INFO sqlalchemy.engine.Engine [cached since 0.01069s ago] ('workspace_members', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,656 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,656 INFO sqlalchemy.engine.Engine [cached since 0.01153s ago] ('invitations', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,656 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,657 INFO sqlalchemy.engine.Engine [cached since 0.01237s ago] ('refresh_tokens', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,657 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,657 INFO sqlalchemy.engine.Engine [cached since 0.01321s ago] ('sessions', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,658 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,658 INFO sqlalchemy.engine.Engine [cached since 0.01386s ago] ('messages', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,659 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,659 INFO sqlalchemy.engine.Engine [cached since 0.0145s ago] ('projects', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,659 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,660 INFO sqlalchemy.engine.Engine [cached since 0.01529s ago] ('memories', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,660 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,660 INFO sqlalchemy.engine.Engine [cached since 0.01603s ago] ('ingest_jobs', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,661 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
+2026-08-30 19:01:17,661 INFO sqlalchemy.engine.Engine [cached since 0.01677s ago] ('message_provenance', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-08-30 19:01:17,662 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2026-08-30 19:01:38,262 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-30 19:01:38,284 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.hashed_password, users.is_active, users.email_verified, users.created_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-08-30 19:01:38,285 INFO sqlalchemy.engine.Engine [generated in 0.00034s] ('e2e@test.com',)
+2026-08-30 19:01:38,294 INFO sqlalchemy.engine.Engine INSERT INTO tenants (id, name, slug, plan, created_at, updated_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::TIMESTAMP WITH TIME ZONE, $6::TIMESTAMP WITH TIME ZONE)
+2026-08-30 19:01:38,294 INFO sqlalchemy.engine.Engine [generated in 0.00035s] ('177cce8c-daa7-4d9a-b9bf-5713cce766dc', 'E2E WS', 'e2e-ws', 'free', datetime.datetime(2026, 8, 30, 13, 31, 38, 294281, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 8, 30, 13, 31, 38, 294281, tzinfo=datetime.timezone.utc))
+2026-08-30 19:01:38,298 INFO sqlalchemy.engine.Engine INSERT INTO workspaces (id, tenant_id, name, slug, description, created_at, updated_at, deleted_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::TIMESTAMP WITH TIME ZONE, $7::TIMESTAMP WITH TIME ZONE, $8::TIMESTAMP WITH TIME ZONE)
+2026-08-30 19:01:38,298 INFO sqlalchemy.engine.Engine [generated in 0.00028s] ('5f034ed7-5268-4806-8c2d-0bd13633b382', '177cce8c-daa7-4d9a-b9bf-5713cce766dc', 'E2E WS', 'e2e-ws', None, datetime.datetime(2026, 8, 30, 13, 31, 38, 298013, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 8, 30, 13, 31, 38, 298013, tzinfo=datetime.timezone.utc), None)
+2026-08-30 19:01:38,643 INFO sqlalchemy.engine.Engine INSERT INTO users (id, email, name, hashed_password, is_active, email_verified, created_at, deleted_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::BOOLEAN, $6::BOOLEAN, $7::TIMESTAMP WITH TIME ZONE, $8::TIMESTAMP WITH TIME ZONE)
+2026-08-30 19:01:38,643 INFO sqlalchemy.engine.Engine [generated in 0.00046s] ('295ae396-dccd-4db1-8fa0-b5abb76af0ad', 'e2e@test.com', 'E2E', '$2b$12$pK97ZZBOLH.9zyd4svoWMuFIT4PokJSNnq5QvN1EUoHKrR9LKT8bm', True, False, datetime.datetime(2026, 8, 30, 13, 31, 38, 643829, tzinfo=datetime.timezone.utc), None)
+2026-08-30 19:01:38,646 INFO sqlalchemy.engine.Engine INSERT INTO workspace_members (id, workspace_id, user_id, role, invited_at, joined_at, expires_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::TIMESTAMP WITH TIME ZONE, $6::TIMESTAMP WITH TIME ZONE, $7::TIMESTAMP WITH TIME ZONE)
+2026-08-30 19:01:38,646 INFO sqlalchemy.engine.Engine [generated in 0.00024s] ('703b6b8c-5429-4a8c-bfa3-062ef7a17a43', '5f034ed7-5268-4806-8c2d-0bd13633b382', '295ae396-dccd-4db1-8fa0-b5abb76af0ad', 'owner', None, None, None)
+2026-08-30 19:01:38,650 INFO sqlalchemy.engine.Engine COMMIT
+2026-08-30 19:01:38,654 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-30 19:01:38,655 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.hashed_password, users.is_active, users.email_verified, users.created_at, users.deleted_at 
+FROM users 
+WHERE users.id = $1::VARCHAR
+2026-08-30 19:01:38,655 INFO sqlalchemy.engine.Engine [generated in 0.00019s] ('295ae396-dccd-4db1-8fa0-b5abb76af0ad',)
+2026-08-30 19:01:38,665 INFO sqlalchemy.engine.Engine INSERT INTO refresh_tokens (id, user_id, token, expires_at, revoked, created_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::TIMESTAMP WITH TIME ZONE, $5::BOOLEAN, $6::TIMESTAMP WITH TIME ZONE)
+2026-08-30 19:01:38,665 INFO sqlalchemy.engine.Engine [generated in 0.00033s] ('cc0f78c2-baaa-4e53-97fa-b161b24de874', '295ae396-dccd-4db1-8fa0-b5abb76af0ad', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyOTVhZTM5Ni1kY2NkLTRkYjEtOGZhMC1iNWFiYjc2YWYwYWQiLCJ0eXBlIjoicmVmcmVzaCIsImp0aSI6IjI5NWFlMzk2LWRjY2QtNGRiMS04ZmEwLWI1YWJiNzZhZjBhZC0xNzg4MDc2ODk4LjY1Njg0OSIsImV4cCI6MTc5MDY4ODY5OH0.nj4jJNXUsn2k47pbS7hPldqFCjff3yKKT4VGgTVpp5U', datetime.datetime(2026, 9, 29, 13, 31, 38, 656849), False, datetime.datetime(2026, 8, 30, 13, 31, 38, 665841, tzinfo=datetime.timezone.utc))
+2026-08-30 19:01:38,668 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:61416 - "POST /api/v1/auth/register HTTP/1.1" 201 Created

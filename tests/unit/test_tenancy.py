@@ -4,7 +4,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_auto_resolve_workspace(client):
     """User with a single membership auto-resolves to that workspace."""
-    reg = await client.post("/auth/register", json={
+    reg = await client.post("/api/v1/auth/register", json={
         "email": "auto@test.com",
         "name": "Auto User",
         "password": "securepass123",
@@ -13,7 +13,7 @@ async def test_auto_resolve_workspace(client):
     token = reg.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    resp = await client.get("/workspace/", headers=headers)
+    resp = await client.get("/api/v1/workspace/", headers=headers)
     assert resp.status_code == 200
     assert resp.json()["name"] == "Auto WS"
 
@@ -22,7 +22,7 @@ async def test_auto_resolve_workspace(client):
 async def test_non_member_blocked(client):
     """User without workspace membership gets 404."""
     # Create two separate users/workspaces
-    reg1 = await client.post("/auth/register", json={
+    reg1 = await client.post("/api/v1/auth/register", json={
         "email": "user1@test.com",
         "name": "User One",
         "password": "securepass123",
@@ -30,17 +30,17 @@ async def test_non_member_blocked(client):
     })
     token1 = reg1.json()["access_token"]
 
-    reg2 = await client.post("/auth/register", json={
+    reg2 = await client.post("/api/v1/auth/register", json={
         "email": "user2@test.com",
         "name": "User Two",
         "password": "securepass123",
         "workspace_name": "WS2",
     })
     token2 = reg2.json()["access_token"]
-    ws2_id = (await client.get("/workspace/", headers={"Authorization": f"Bearer {token2}"})).json()["id"]
+    ws2_id = (await client.get("/api/v1/workspace/", headers={"Authorization": f"Bearer {token2}"})).json()["id"]
 
     # User1 tries to access WS2 — not a member
-    resp = await client.get("/workspace/", headers={
+    resp = await client.get("/api/v1/workspace/", headers={
         "Authorization": f"Bearer {token1}",
         "X-Workspace-Id": ws2_id,
     })
@@ -51,7 +51,7 @@ async def test_non_member_blocked(client):
 async def test_cross_tenant_isolation(client):
     """Projects from workspace A are not visible from workspace B."""
     # Create workspace A
-    reg_a = await client.post("/auth/register", json={
+    reg_a = await client.post("/api/v1/auth/register", json={
         "email": "tenantA@test.com",
         "name": "Tenant A",
         "password": "securepass123",
@@ -61,10 +61,10 @@ async def test_cross_tenant_isolation(client):
     headers_a = {"Authorization": f"Bearer {token_a}"}
 
     # Create project in A
-    await client.post("/projects/", json={"name": "A Project"}, headers=headers_a)
+    await client.post("/api/v1/projects/", json={"name": "A Project"}, headers=headers_a)
 
     # Create workspace B
-    reg_b = await client.post("/auth/register", json={
+    reg_b = await client.post("/api/v1/auth/register", json={
         "email": "tenantB@test.com",
         "name": "Tenant B",
         "password": "securepass123",
@@ -74,6 +74,6 @@ async def test_cross_tenant_isolation(client):
     headers_b = {"Authorization": f"Bearer {token_b}"}
 
     # B should see no projects
-    resp = await client.get("/projects/", headers=headers_b)
+    resp = await client.get("/api/v1/projects/", headers=headers_b)
     assert resp.status_code == 200
     assert resp.json() == []

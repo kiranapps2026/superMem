@@ -73,7 +73,7 @@ export default function DashboardPage() {
               className="block bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 hover:border-[var(--accent)]/50 transition-colors">
               <h3 className="font-medium text-sm">{p.name}</h3>
               {p.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{p.description}</p>}
-              <p className="text-xs text-gray-500 mt-3">{p.session_count} sessions</p>
+              <p className="text-xs text-gray-500 mt-3">{p.description ? 'Click to open' : 'No description'}</p>
             </Link>
           ))}
         </div>

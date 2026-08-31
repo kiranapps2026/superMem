@@ -21,6 +21,7 @@ function ProjectNav({ projectId }: { projectId: string }) {
     { href: `/projects/${projectId}/decisions`, label: 'Decisions', icon: GitBranch },
     { href: `/projects/${projectId}/timeline`, label: 'Timeline', icon: GitBranch },
     { href: `/projects/${projectId}/search`, label: 'Search', icon: GitBranch },
+    { href: `/projects/${projectId}/graph`, label: 'Graph', icon: GitBranch },
   ];
   return (
     <div className="space-y-0.5">

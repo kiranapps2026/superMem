@@ -1,10 +1,18 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { SearchResponse, SearchResult } from '@/types/api';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiPost, getToken } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
-import { Search, Shield } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
+
+interface SearchResult {
+  item_type: string;
+  id: string;
+  score: number;
+  content: string;
+  temporal_status: string | null;
+  created_at: string;
+}
 
 export default function SearchPage() {
   const { user } = useAuth();
@@ -13,19 +21,27 @@ export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-  const [count, setCount] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [searched, setSearched] = useState(false);
 
   const doSearch = useCallback(async () => {
     if (!query.trim() || !user) return;
     setSearching(true);
+    setSearched(true);
     try {
-      const data = await apiGet<SearchResponse>(`/api/v1/memory/${projectId}/search?q=${encodeURIComponent(query.trim())}`);
-      setResults(data.results); setCount(data.count);
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const token = getToken();
+      const res = await fetch(
+        `${API_BASE}/api/v1/ingest/search?query=${encodeURIComponent(query.trim())}&limit=20&project_id=${encodeURIComponent(projectId)}`,
+        { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { items: SearchResult[]; total: number };
+      setResults(data.items || []);
+      setTotal(data.total || 0);
     } catch {}
     finally { setSearching(false); }
   }, [query, user, projectId]);
-
-  useEffect(() => { doSearch(); }, [doSearch]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -34,30 +50,26 @@ export default function SearchPage() {
         <input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
           placeholder="Search memories, facts, decisions…" autoFocus
           className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" />
-        <button onClick={doSearch} disabled={searching} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 rounded-md disabled:opacity-50">
-          <Search size={16} />
+        <button onClick={doSearch} disabled={searching || !query.trim()} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 rounded-md disabled:opacity-50">
+          <SearchIcon size={16} />
         </button>
       </div>
-      {searching ? <div className="text-sm text-gray-500">Searching…</div> : results.length === 0 ? (
-        <p className="text-sm text-gray-500">{query ? 'No results found.' : 'Enter a query to search.'}</p>
+      {searching ? <div className="text-sm text-gray-500">Searching…</div> : searched && results.length === 0 ? (
+        <p className="text-sm text-gray-500">No results found for &ldquo;{query}&rdquo;.</p>
       ) : (
         <div>
-          <p className="text-xs text-gray-500 mb-3">{count} results</p>
+          {total > 0 && <p className="text-xs text-gray-500 mb-3">{total} results</p>}
           <div className="space-y-2">
             {results.map((r) => (
               <div key={r.id} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium bg-[var(--bg-tertiary)] px-2 py-0.5 rounded">{r.type}</span>
-                    <span className="text-xs text-gray-500">{r.subtype}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Shield size={12} />{Math.round(r.scores.final_score * 100)}%
-                  </div>
+                  <span className="text-xs font-medium bg-[var(--bg-tertiary)] px-2 py-0.5 rounded text-gray-400">{r.item_type}</span>
+                  <span className="text-xs text-gray-500">{new Date(r.created_at).toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-gray-300 line-clamp-3">{r.content}</p>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {r.tags.map((t) => <span key={t} className="text-xs text-gray-500 bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">{t}</span>)}
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">Score: {Math.round(r.score * 100)}%</span>
+                  {r.temporal_status && <span className="text-xs text-gray-500">{r.temporal_status}</span>}
                 </div>
               </div>
             ))}

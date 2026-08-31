@@ -8,13 +8,16 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [workspaceName, setWorkspaceName] = useState('');
   const { register, loading, error, clearError } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault(); clearError();
-    try { await register(email, password, name || undefined); router.push('/dashboard'); }
-    catch {}
+    try {
+      await register({ email, password, name: name || '', workspace_name: workspaceName });
+      router.push('/dashboard');
+    } catch {}
   };
 
   return (
@@ -28,13 +31,18 @@ export default function RegisterPage() {
           {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-3 py-2 rounded">{error}</div>}
           <div>
             <label className="block text-sm text-gray-400 mb-1">Full name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus
               className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" placeholder="Jane Doe" />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
               className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Workspace name</label>
+            <input type="text" value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} required
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" placeholder="Acme Corp" />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Password</label>

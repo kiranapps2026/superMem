@@ -68,6 +68,45 @@ async def get_session(
     return session
 
 
+@router.get("/{session_id}/history")
+async def get_session_history(
+    session_id: str,
+    tc: Annotated[TenantContext, Depends(get_tenant_context)],
+    db: AsyncSession = Depends(get_db),
+):
+    """Get session with all messages included."""
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(Session)
+        .options(selectinload(Session.messages))
+        .where(
+            Session.id == session_id,
+            Session.workspace_id == tc.workspace_id,
+            Session.user_id == tc.user_id,
+            Session.deleted_at.is_(None),
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    meta = session.extra_metadata or {}
+    return {
+        "session_id": str(session.id),
+        "title": session.title,
+        "source": meta.get("source", "chat"),
+        "messages": [
+            {
+                "id": str(m.id),
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in sorted(session.messages, key=lambda x: x.created_at)
+        ],
+    }
+
+
 @router.post("/{session_id}/messages", response_model=MessageOut, status_code=status.HTTP_201_CREATED)
 async def add_message(
     session_id: str,

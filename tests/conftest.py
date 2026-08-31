@@ -1,66 +1,65 @@
-import asyncio
+"""Test fixtures for SwarmVault API tests."""
+
+from __future__ import annotations
+
+import uuid
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
-from app.core.config import settings
-from app.db import Base, init_db
+from app.db import Base
 from app.main import app
-from app.models import User, Tenant, Workspace, WorkspaceMember
 
-# Test database
-TEST_DATABASE_URL = "postgresql+asyncpg://swarmvault:swarmvault@localhost:5432/swarmvault_test"
-
-# Shared test engine/factory (module-level to avoid creating a pool per test)
-_engine = None
-_factory = None
+TEST_DATABASE_URL = (
+    "postgresql+asyncpg://swarmvault:swarmvault@localhost:5432/swarmvault_test"
+)
 
 
-def _get_engine():
-    global _engine
-    if _engine is None:
-        _engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    return _engine
-
-
-def _get_factory():
-    global _factory
-    if _factory is None:
-        _factory = async_sessionmaker(_get_engine(), class_=AsyncSession, expire_on_commit=False)
-    return _factory
+@pytest_asyncio.fixture(scope="session")
+async def _engine():
+    """Shared engine — schema created once, dropped once."""
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        poolclass=NullPool,
+    )
+    # Drop then create to handle restarts
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture
-async def db_session():
-    """Create a fresh database session for each test with rolled-back transaction."""
-    engine = _get_engine()
-    # Create all tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session = _get_factory()()
+async def db_session(_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Wrap each test in a transaction that rolls back — zero DB leakage."""
+    connection = await _engine.connect()
+    transaction = await connection.begin()
+    session = AsyncSession(bind=connection, expire_on_commit=False)
     try:
         yield session
     finally:
         await session.close()
-        # Drop all tables
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+        await transaction.rollback()
+        await connection.close()
 
 
 @pytest_asyncio.fixture
-async def client(db_session):
-    """AsyncClient with dependency override for DB session."""
-    from app.db import async_session_factory as _orig_factory
-
-    # Override get_db to use test session
+async def client(db_session: AsyncSession):
+    """AsyncClient with DB dependency override."""
     async def _override_get_db():
         yield db_session
 
     app.dependency_overrides = {}
     from app.db import get_db
+
     app.dependency_overrides[get_db] = _override_get_db
 
     transport = ASGITransport(app=app)
@@ -72,26 +71,22 @@ async def client(db_session):
 
 @pytest_asyncio.fixture
 async def seeded_workspace(client: AsyncClient):
-    """Create a tenant, workspace, user, and owner membership. Returns tokens and IDs."""
-    email = "owner@test.com"
-    password = "testpass123"
-    workspace_name = "Test Workspace"
-
-    # Register
-    resp = await client.post("/auth/register", json={
-        "email": email,
+    """Register a unique user and return their token/workspace info."""
+    uid = uuid.uuid4().hex[:8]
+    resp = await client.post("/api/v1/auth/register", json={
+        "email": f"owner-{uid}@test.com",
         "name": "Test Owner",
-        "password": password,
-        "workspace_name": workspace_name,
+        "password": "testpass123",
+        "workspace_name": f"Test Workspace {uid}",
     })
     assert resp.status_code == 201, f"Registration failed: {resp.text}"
-    tokens = resp.json()
+    data = resp.json()
 
     return {
-        "email": email,
-        "password": password,
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens["refresh_token"],
-        "workspace_name": workspace_name,
-        "headers": {"Authorization": f"Bearer {tokens['access_token']}"},
+        "email": f"owner-{uid}@test.com",
+        "password": "testpass123",
+        "access_token": data["access_token"],
+        "refresh_token": data["refresh_token"],
+        "workspace_name": f"Test Workspace {uid}",
+        "headers": {"Authorization": f"Bearer {data['access_token']}"},
     }

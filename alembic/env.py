@@ -16,7 +16,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Use sync driver for Alembic (it doesn't support async drivers)
+db_url = settings.database_url
+if db_url.startswith("postgresql+asyncpg://"):
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 
@@ -39,19 +43,18 @@ def do_run_migrations(connection) -> None:
         context.run_migrations()
 
 
-async def run_migrations_online() -> None:
+def run_migrations_online() -> None:
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
+    connectable.dispose()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    import asyncio
-    asyncio.run(run_migrations_online())
+    run_migrations_online()

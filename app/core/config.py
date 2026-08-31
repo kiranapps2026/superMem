@@ -13,5 +13,17 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 30
     cors_origins: list[str] = ["*"]
 
+    # LLM provider
+    llm_provider: str = "anthropic"
+    llm_model: str = "claude-sonnet-4-5-20250929"
+    llm_max_tokens: int = 1024
+    llm_temperature: float = 0.7
+    anthropic_api_key: str = ""
+    openai_api_key: str = ""
+
+    # SwarmVault
+    swarmvault_url: str = "http://localhost:8000"
+    swarmvault_api_key: str = ""
+
 
 settings = Settings()
