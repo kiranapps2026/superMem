@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import Session, Message
 from app.schemas import SessionCreate, SessionOut, MessageCreate, MessageOut
 from datetime import datetime, timezone
@@ -35,6 +36,7 @@ async def create_session(
     data: SessionCreate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     session = Session(
         workspace_id=tc.workspace_id,
@@ -113,6 +115,7 @@ async def add_message(
     data: MessageCreate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     session_result = await db.execute(
         select(Session).where(

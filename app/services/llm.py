@@ -10,6 +10,7 @@ for existing callers and tests.
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from typing import Any, AsyncIterator
@@ -233,15 +234,61 @@ def _openai_to_dict(resp) -> dict[str, Any]:
 # ── Factory ──────────────────────────────────────────────────────────────────
 
 def get_llm_provider() -> LLMProvider:
-    """Return the configured provider."""
+    """Return the configured provider with timeout/retry wrapper."""
     provider_name = settings.llm_provider.lower()
 
     if provider_name == "anthropic" and settings.anthropic_api_key:
-        return AnthropicProvider(settings.anthropic_api_key)
+        return _with_timeout_and_retry(AnthropicProvider(settings.anthropic_api_key))
     if provider_name == "openai" and settings.openai_api_key:
-        return OpenAIProvider(settings.openai_api_key)
+        return _with_timeout_and_retry(OpenAIProvider(settings.openai_api_key))
 
     return MockProvider()
+
+
+def _with_timeout_and_retry(provider: LLMProvider) -> LLMProvider:
+    """Wrap a provider with timeout and retry logic."""
+    timeout = settings.llm_timeout_seconds
+    max_retries = settings.llm_max_retries
+    backoff = settings.llm_retry_backoff
+
+    original = provider.chat_completion
+
+    async def wrapped(
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+        stream: bool = False,
+    ) -> dict[str, Any] | AsyncIterator[str]:
+        if stream:
+            return await original(messages, model, max_tokens, temperature, stream)
+
+        last_exc: Exception | None = None
+        for attempt in range(max_retries + 1):
+            try:
+                return await asyncio.wait_for(
+                    original(messages, model, max_tokens, temperature, stream),
+                    timeout=timeout,
+                )
+            except asyncio.TimeoutError as exc:
+                last_exc = exc
+                if attempt < max_retries:
+                    await asyncio.sleep(backoff * (2 ** attempt))
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_retries:
+                    await asyncio.sleep(backoff * (2 ** attempt))
+
+        return {
+            "content": f"[LLM unavailable after {max_retries + 1} attempts: {last_exc}]",
+            "model": model,
+            "provider": provider.name,
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            "stop_reason": "error",
+        }
+
+    provider.chat_completion = wrapped  # type: ignore[method-assign]
+    return provider
 
 
 # ── Backward-compat API (used by tests and chat_orchestrator) ─────────────────

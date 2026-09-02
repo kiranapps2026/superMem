@@ -11,3 +11,7 @@ build/
 *.db
 node_modules/
 .next/
+
+# Runtime data — never commit
+storage/
+*.log

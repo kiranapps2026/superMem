@@ -14,11 +14,13 @@ from starlette.responses import StreamingResponse
 from app.core.config import settings
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import Message, Session
 from app.schemas import ChatRequest, ChatResponse
 from app.services.chat_orchestrator import process_chat
 from app.services.llm import get_llm_provider
 from app.services.retrieval import retrieve_memories
+from app.services.policy.dependencies import require_policy
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -28,6 +30,7 @@ async def send_chat_message(
     data: ChatRequest,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("viewer")),
 ):
     session_id = data.session_id
     if session_id is None:
@@ -241,8 +244,8 @@ async def stream_chat(
             finally:
                 await provider.aclose()
 
-        except Exception as exc:
-            yield await _sse_stream({"type": "error", "detail": str(exc)})
+        except Exception:
+            yield await _sse_stream({"type": "error", "detail": "An internal error occurred"})
 
     return StreamingResponse(
         _gen(),

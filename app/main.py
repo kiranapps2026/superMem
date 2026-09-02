@@ -4,6 +4,7 @@ import uuid
 import logging
 import json
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
 from app.db import init_db
+from app.services.audit.service import AuditService
+from app.services.audit.service import AuditService
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
@@ -50,8 +53,31 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
         if settings.is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'"
+            )
+        else:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https: http:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' http://localhost:* ws://localhost:*; "
+                "frame-ancestors 'none'"
+            )
         return response
 
 
@@ -110,7 +136,7 @@ def _error_response(status: int, error_type: str, message: str, request: Request
 # ── API routers ───────────────────────────────────────────────────────
 
 
-from app.api import auth, workspace, projects, sessions, chat, memory, ingest, provenance, dashboard, feedback, api_keys, storage
+from app.api import auth, workspace, projects, sessions, chat, memory, ingest, provenance, dashboard, feedback, api_keys, storage, policy, audit
 
 api_v1 = APIRouter(prefix="/api/v1")
 api_v1.include_router(auth.router)
@@ -125,7 +151,13 @@ api_v1.include_router(dashboard.router)
 api_v1.include_router(feedback.router)
 api_v1.include_router(api_keys.router)
 api_v1.include_router(storage.router)
+api_v1.include_router(policy.router)
+api_v1.include_router(audit.router)
 
+
+# ── Audit service ──────────────────────────────────────────────────────
+
+audit = AuditService()
 
 # ── Lifespan ──────────────────────────────────────────────────────────
 
@@ -135,6 +167,8 @@ async def lifespan(app: FastAPI):
     if settings.environment == "development":
         setup_logging()
     await init_db()
+    # Wire DB persistence for audit events
+    audit.register_db_sink()
     yield
 
 
@@ -153,6 +187,29 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Request ID + latency
 app.add_middleware(RequestIdMiddleware)
+
+# Audit persistence — flush buffered audit events after each request
+class AuditPersistenceMiddleware(BaseHTTPMiddleware):
+    """Persist buffered audit events to PostgreSQL after each request.
+
+    Uses a short-lived independent session so audit writes are atomic
+    with respect to the request's transaction.
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        response = await call_next(request)
+        # Persist audit events (failures are logged, never block the response)
+        try:
+            from app.db import async_session_factory
+            async with async_session_factory() as session:
+                await audit.persist(session)
+                await session.commit()
+        except Exception:
+            logging.getLogger("app.main").warning("audit persist failed", exc_info=True)
+        return response
+
+
+app.add_middleware(AuditPersistenceMiddleware)
 
 # CORS — production-safe
 cors_origins = settings.cors_origins_safe
@@ -184,8 +241,9 @@ async def db_error_handler(request: Request, exc: SQLAlchemyError):
 @app.exception_handler(Exception)
 async def generic_error_handler(request: Request, exc: Exception):
     logging.getLogger("app.main").error("unhandled_error", exc_info=exc)
-    detail = str(exc) if settings.debug else "Internal server error"
-    return _error_response(500, "internal_error", detail, request)
+    # Never expose raw exception text to clients, regardless of debug mode
+    # Full details are in server logs via exc_info above
+    return _error_response(500, "internal_error", "Internal server error", request)
 
 # Register API routes
 app.include_router(api_v1)

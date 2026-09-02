@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import Project
 from app.schemas import ProjectCreate, ProjectOut, ProjectUpdate
 from datetime import datetime, timezone
@@ -13,6 +14,9 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# ── Projects ────────────────────────────────────────────────────────────
 
 
 @router.get("/", response_model=list[ProjectOut])
@@ -34,6 +38,7 @@ async def create_project(
     data: ProjectCreate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     project = Project(
         workspace_id=tc.workspace_id,
@@ -71,6 +76,7 @@ async def update_project(
     data: ProjectUpdate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     result = await db.execute(
         select(Project).where(
@@ -98,6 +104,7 @@ async def delete_project(
     project_id: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
     result = await db.execute(
         select(Project).where(

@@ -5,8 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import MessageProvenance, Memory
 from app.schemas import ProvenanceOut, MemoryReferenceOut
+from app.services.policy.dependencies import require_policy
 
 router = APIRouter(prefix="/provenance", tags=["provenance"])
 
@@ -15,6 +17,7 @@ router = APIRouter(prefix="/provenance", tags=["provenance"])
 async def list_provenance(
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
     session_id: str | None = Query(None),
     project_id: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),

@@ -1,5 +1,7 @@
 from typing import AsyncGenerator
 
+from alembic import command
+from alembic.config import Config as AlembicConfig
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
@@ -19,6 +21,18 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+def _alembic_config() -> AlembicConfig:
+    """Build Alembic config pointing to project root."""
+    import os
+    cfg = AlembicConfig(os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    cfg.set_main_option("script_location", os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic"))
+    return cfg
+
+
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Apply all pending migrations to the database."""
+    import asyncio
+    loop = asyncio.get_event_loop()
+    cfg = _alembic_config()
+    await loop.run_in_executor(None, lambda: command.upgrade(cfg, "head"))

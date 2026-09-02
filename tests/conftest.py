@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.db import Base
@@ -24,21 +25,47 @@ TEST_DATABASE_URL = (
 )
 
 
+def _run_alembic_migrations(database_url: str) -> None:
+    """Run all Alembic migrations against the test database."""
+    from alembic import command
+    from alembic.config import Config as AlembicConfig
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ini_path = os.path.join(base_dir, "alembic.ini")
+    cfg = AlembicConfig(ini_path)
+    cfg.set_main_option("sqlalchemy.url", database_url)
+    cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
+    command.upgrade(cfg, "head")
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+def _apply_migrations():
+    """Apply all Alembic migrations once per test session."""
+    _run_alembic_migrations(TEST_DATABASE_URL)
+    yield
+    # Teardown: drop all tables via migrations in reverse
+    try:
+        from alembic import command
+        from alembic.config import Config as AlembicConfig
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cfg = AlembicConfig(os.path.join(base_dir, "alembic.ini"))
+        cfg.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
+        cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
+        command.downgrade(cfg, "base")
+    except Exception:
+        pass
+
+
 @pytest_asyncio.fixture(scope="session")
 async def _engine():
-    """Shared engine — schema created once, dropped once."""
+    """Shared engine for the test session (migrations already applied)."""
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         poolclass=NullPool,
     )
-    # Drop then create to handle restarts
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
     yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 

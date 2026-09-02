@@ -64,6 +64,7 @@ def upgrade() -> None:
         sa.Column("role", sa.String(20), server_default="member"),
         sa.Column("invited_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("joined_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
     )
     op.create_index("ix_workspace_members_workspace_id", "workspace_members", ["workspace_id"])
     op.create_index("ix_workspace_members_user_id", "workspace_members", ["user_id"])
@@ -73,7 +74,7 @@ def upgrade() -> None:
         "refresh_tokens",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("token", sa.String(255), nullable=False, unique=True, index=True),
+        sa.Column("token", sa.String(512), nullable=False, unique=True, index=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("revoked", sa.Boolean(), server_default=sa.false()),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),

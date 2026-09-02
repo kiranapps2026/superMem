@@ -235,8 +235,11 @@ class Memory(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id"), nullable=False, index=True
+    )
     workspace_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("workspaces.id")
+        String(36), ForeignKey("workspaces.id"), nullable=False, index=True
     )
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     agent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
@@ -259,6 +262,8 @@ class Memory(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    tenant: Mapped["Tenant"] = relationship("Tenant")
 
 
 class IngestJob(Base):
@@ -713,4 +718,120 @@ class ApiKey(Base):
     __table_args__ = (
         Index("ix_api_keys_workspace", "workspace_id"),
         Index("ix_api_keys_user", "user_id"),
+    )
+
+
+# ── Sprint 7: Policy Engine ────────────────────────────────────────────────
+
+
+class Policy(Base):
+    """Top-level policy record (Sprint 7)."""
+
+    __tablename__ = "policies"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    current_version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    versions: Mapped[list["PolicyVersion"]] = relationship(
+        "PolicyVersion", back_populates="policy", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_policies_tenant_id", "tenant_id"),
+        Index("ix_policies_status", "status"),
+    )
+
+
+class PolicyVersion(Base):
+    """Versioned rule set for a policy (Sprint 7)."""
+
+    __tablename__ = "policy_versions"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    policy_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("policies.id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    rules: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    policy: Mapped["Policy"] = relationship("Policy", back_populates="versions")
+
+    __table_args__ = (
+        Index("ix_policy_versions_policy_id", "policy_id"),
+        UniqueConstraint("policy_id", "version", name="uq_policy_version"),
+    )
+
+
+class AuditEvent(Base):
+    """Persistent audit event (Sprint 7 — Phase 4).
+
+    Append-only from the application perspective.  Ordinary agents cannot
+    modify or delete records.  Audit events are never updated — only
+    inserted and queried.
+
+    Sensitive fields (passwords, tokens, secrets) must never be stored.
+    """
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    tenant_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("tenants.id"), nullable=True, index=True
+    )
+    workspace_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    project_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    principal_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    principal_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    resource_type: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    resource_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    action: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    decision: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    policy_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    policy_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    result_status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    limits: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    provenance_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    event_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+    # NOTE: SQLAlchemy reserves `metadata` — use `event_metadata` for
+    # the ORM attribute, and map in AuditRepository when converting
+    # from AuditEventDTO (which uses `metadata`).
+
+    __table_args__ = (
+        Index("ix_audit_events_tenant_timestamp", "tenant_id", "timestamp"),
+        Index("ix_audit_events_principal_timestamp", "principal_id", "timestamp"),
+        Index("ix_audit_events_resource_timestamp", "resource_type", "timestamp"),
+        Index("ix_audit_events_correlation", "correlation_id", "timestamp"),
     )

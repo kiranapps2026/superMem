@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.middleware.auth import require_auth
 from app.models import User, Workspace, WorkspaceMember, Invitation
 from app.schemas import (
@@ -13,16 +14,6 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/workspace", tags=["workspace"])
-
-ROLE_HIERARCHY = {"owner": 1000, "admin": 500, "member": 100, "viewer": 50}
-
-
-def _require_min_role(tc: TenantContext, min_role: str):
-    if ROLE_HIERARCHY.get(tc.role, 0) < ROLE_HIERARCHY.get(min_role, 0):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"{min_role.capitalize()} role required",
-        )
 
 
 def _now() -> datetime:
@@ -54,8 +45,8 @@ async def update_workspace(
     data: dict,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
 
     result = await db.execute(
         select(Workspace).where(
@@ -82,9 +73,8 @@ async def update_workspace(
 async def delete_workspace(
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("owner")),
 ):
-    _require_min_role(tc, "owner")
-
     result = await db.execute(
         select(Workspace).where(
             Workspace.id == tc.workspace_id,
@@ -140,8 +130,8 @@ async def invite_member(
     data: WorkspaceMemberInvite,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
 
     target_result = await db.execute(
         select(User).where(User.email == data.email)
@@ -208,9 +198,8 @@ async def update_member(
     data: WorkspaceMemberUpdate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
-
     result = await db.execute(
         select(WorkspaceMember).where(
             WorkspaceMember.id == member_id,
@@ -259,9 +248,8 @@ async def remove_member(
     user_id: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
-
     if user_id == tc.user_id:
         raise HTTPException(
             status_code=400,
@@ -321,9 +309,8 @@ async def leave_workspace(
 async def list_invitations(
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
-    _require_min_role(tc, "member")
-
     result = await db.execute(
         select(Invitation).where(
             Invitation.workspace_id == tc.workspace_id,
@@ -340,9 +327,8 @@ async def list_invitations_by_state(
     state: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
-    _require_min_role(tc, "member")
-
     result = await db.execute(
         select(Invitation).where(
             Invitation.workspace_id == tc.workspace_id,
@@ -358,9 +344,8 @@ async def update_invitation(
     data: InvitationUpdate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
-
     result = await db.execute(
         select(Invitation).where(
             Invitation.id == invitation_id,
@@ -389,9 +374,8 @@ async def delete_invitation(
     invitation_id: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
-    _require_min_role(tc, "admin")
-
     result = await db.execute(
         select(Invitation).where(
             Invitation.id == invitation_id,

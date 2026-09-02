@@ -25,8 +25,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import ApiKey
 from app.schemas import ApiKeyOut
+from app.services.audit import (
+    AuditService,
+    API_KEY_CREATED,
+    API_KEY_REVOKED,
+    API_KEY_ROTATED,
+    RESULT_SUCCESS,
+    RESULT_FAILURE,
+)
+
+_audit = AuditService()
 
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
@@ -95,6 +106,7 @@ async def create_api_key(
     data: ApiKeyCreate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
     """Create a new API key for the current workspace."""
     raw_key = _generate_key()
@@ -113,6 +125,20 @@ async def create_api_key(
     db.add(key)
     await db.commit()
     await db.refresh(key)
+
+    _audit.emit(
+        event_type=API_KEY_CREATED,
+        result_status=RESULT_SUCCESS,
+        principal_id=tc.user_id,
+        principal_type="user",
+        resource_type="api_key",
+        resource_id=str(key.id),
+        action="create",
+        tenant_id=tc.tenant_id,
+        workspace_id=tc.workspace_id,
+        request_id=getattr(tc, "request_id", None),
+        metadata={"key_prefix": key.key_prefix, "key_name": key.name},
+    )
 
     return ApiKeyCreateResponse(
         id=key.id,
@@ -146,6 +172,7 @@ async def revoke_api_key(
     key_id: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
     """Revoke an API key immediately."""
     result = await db.execute(
@@ -159,6 +186,20 @@ async def revoke_api_key(
         raise HTTPException(status_code=404, detail="API key not found")
     key.revoked_at = _now()
     await db.commit()
+
+    _audit.emit(
+        event_type=API_KEY_REVOKED,
+        result_status=RESULT_SUCCESS,
+        principal_id=tc.user_id,
+        principal_type="user",
+        resource_type="api_key",
+        resource_id=str(key.id),
+        action="revoke",
+        tenant_id=tc.tenant_id,
+        workspace_id=tc.workspace_id,
+        request_id=getattr(tc, "request_id", None),
+        metadata={"key_prefix": key.key_prefix},
+    )
     return None
 
 
@@ -167,6 +208,7 @@ async def rotate_api_key(
     key_id: str,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("admin")),
 ):
     """Rotate an API key: creates a new one with the same metadata and revokes the old."""
     result = await db.execute(
@@ -194,6 +236,20 @@ async def rotate_api_key(
     db.add(new_key)
     await db.commit()
     await db.refresh(new_key)
+
+    _audit.emit(
+        event_type=API_KEY_ROTATED,
+        result_status=RESULT_SUCCESS,
+        principal_id=tc.user_id,
+        principal_type="user",
+        resource_type="api_key",
+        resource_id=str(new_key.id),
+        action="rotate",
+        tenant_id=tc.tenant_id,
+        workspace_id=tc.workspace_id,
+        request_id=getattr(tc, "request_id", None),
+        metadata={"old_key_prefix": old_key.key_prefix, "new_key_prefix": new_key.key_prefix},
+    )
 
     return ApiKeyRotateResponse(
         id=new_key.id,

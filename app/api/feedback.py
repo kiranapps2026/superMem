@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import MessageFeedback
 from app.schemas import FeedbackCreate, FeedbackOut, FeedbackListResponse
 
@@ -27,6 +28,7 @@ async def create_feedback(
     data: FeedbackCreate,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     """Submit feedback on a chat response."""
     feedback = MessageFeedback(

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.middleware.tenancy import TenantContext, get_tenant_context
+from app.middleware.rbac import require_min_role
 from app.models import (
     Source, NormalizedMessage, Fact, Decision,
     GraphNode, GraphEdge, Memory, Project,
@@ -23,8 +24,11 @@ from app.schemas import (
     SearchResultItem, SearchResponse,
 )
 from app.services.m5_retrieval import retrieve_hybrid, RetrievalResult
+from app.services.audit import AuditService, INGEST_COMPLETED, INGEST_FAILED, SOURCE_DELETED, MEMORY_READ, RESULT_SUCCESS, RESULT_FAILURE
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
+
+_audit = AuditService()
 
 
 # ── Upload / Pipeline ──────────────────────────────────────────────────
@@ -35,6 +39,7 @@ async def upload_and_ingest(
     data: IngestUploadRequest,
     tc: Annotated[TenantContext, Depends(get_tenant_context)],
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_min_role("member")),
 ):
     """Upload a conversation and run the full M0→M1→M2→M3→M4 pipeline.
 
@@ -91,6 +96,22 @@ async def upload_and_ingest(
         if src:
             src.content_hash = content_hash
             await db.commit()
+    # Audit: ingest completed
+    _audit.emit(
+        event_type=INGEST_COMPLETED,
+        principal_id=tc.user_id,
+        principal_type="user",
+        resource_type="source",
+        resource_id=source_id,
+        action="ingest",
+        tenant_id=tc.tenant_id,
+        workspace_id=tc.workspace_id,
+        project_id=data.project_id,
+        request_id=result.get("source_id"),
+        duration_ms=0,
+        result_status=RESULT_SUCCESS,
+        metadata={"source_type": data.source_type, "content_hash": content_hash},
+    )
     return IngestUploadResponse(**result)
 
 

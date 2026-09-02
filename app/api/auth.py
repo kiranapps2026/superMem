@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 @router.post(
@@ -162,7 +162,7 @@ async def refresh(
         select(RefreshToken).where(
             RefreshToken.token == data.refresh_token,
             RefreshToken.revoked == False,  # noqa: E712
-            RefreshToken.expires_at > datetime.utcnow(),
+            RefreshToken.expires_at > _now(),
         )
     )
     rt = result.scalar_one_or_none()
