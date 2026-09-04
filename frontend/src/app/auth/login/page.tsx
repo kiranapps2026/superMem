@@ -20,8 +20,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">SwarmVault</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your workspace</p>
+          <h1 className="text-2xl font-bold">Sign in to SwarmVault</h1>
+          <p className="text-sm text-gray-500 mt-1">Enter your credentials</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-3 py-2 rounded">{error}</div>}

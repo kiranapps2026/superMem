@@ -72,9 +72,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """Apply rate limiting based on configured rules."""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        # Always pass in test environments
+        # Always pass in test environments (flag from pytest conftest)
         if getattr(request.app.state, "testing", False):
             return await call_next(request)
+
+        # In non-production environments, allow test header bypass for
+        # external e2e test suites that cannot set app.state.testing.
+        # NEVER active when environment=production.
+        if settings.environment != "production":
+            if request.headers.get("X-E2E") == "true":
+                return await call_next(request)
 
         path = request.url.path
 

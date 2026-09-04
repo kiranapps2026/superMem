@@ -1,4 +1,4 @@
-import { test, expect, request as pwRequest } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8000';
 
@@ -6,15 +6,15 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8000';
 
 async function apiRequest(method: string, path: string, token?: string, body?: any) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = token;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await pwRequest.fetch(`${BASE}${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
-    data: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(body) : undefined,
   });
-  const data = res.ok() ? await res.json() : await res.text();
-  return { status: res.status(), data };
+  const data = res.ok ? await res.json() : await res.text();
+  return { status: res.status, data };
 }
 
 function makeChatGPTConversation() {

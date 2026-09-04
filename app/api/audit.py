@@ -32,7 +32,7 @@ from app.services.audit.constants import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
+router = APIRouter(prefix="/audit", tags=["audit"])
 
 
 def _event_to_dict(event: AuditEventModel) -> dict[str, Any]:

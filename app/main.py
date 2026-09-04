@@ -260,12 +260,13 @@ async def liveness():
 @app.get("/health/ready")
 async def readiness():
     try:
-        from app.db import async_engine
+        from app.db import engine
         from sqlalchemy import text
-        async with async_engine.connect() as conn:
+        async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         return {"status": "ready", "database": "connected"}
-    except Exception:
+    except Exception as exc:
+        logger.warning("readiness check failed: %s", exc)
         return JSONResponse(
             status_code=503,
             content={"status": "not_ready", "database": "unavailable"},

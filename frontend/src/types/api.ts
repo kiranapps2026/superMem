@@ -37,7 +37,18 @@ export interface ChatResponse {
   confidence: number | null;
   provider: string | null;
 }
-export interface ChatStreamEvent { type: 'token' | 'done' | 'error'; content?: string; metadata?: { tokens: number; memory_grounded: boolean }; error?: string; }
+export interface ChatStreamEvent {
+  type: 'token' | 'done' | 'error' | 'sources';
+  content?: string;
+  metadata?: { tokens: number; memory_grounded: boolean };
+  error?: string;
+  sources?: Array<{
+    memory_id: string;
+    content: string;
+    item_type: string;
+    score: number;
+  }>;
+}
 
 export interface MemoryItemOut {
   id: string; workspace_id: string; user_id: string;
@@ -128,3 +139,47 @@ export interface InvitationUpdate { state?: string; role?: string; }
 
 export type FeedbackRating = 'thumbs_up' | 'thumbs_down' | 'neutral';
 export type MemoryType = 'semantic_memory' | 'episodic_memory' | 'procedural_memory' | 'working_memory';
+
+// ── API Keys ────────────────────────────────────────────────────────
+
+export interface ApiKeyOut {
+  id: string;
+  prefix: string;
+  name: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+export interface ApiKeyCreateResponse extends ApiKeyOut {
+  raw_key: string;
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  project_count: number;
+  memory_count: number;
+  session_count: number;
+  source_count: number;
+}
+
+// ── User / Auth ─────────────────────────────────────────────────────
+
+export interface UserUpdate { name?: string | null; }
+
+// ── Storage ─────────────────────────────────────────────────────────
+
+export interface StorageFileOut {
+  id: string;
+  name: string;
+  size: number;
+  content_type: string;
+  uploaded_at: string;
+}
+
+// ── Pagination wrapper (common pattern) ─────────────────────────────
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+}

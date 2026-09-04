@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { MemoryItemOut } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
@@ -8,7 +9,7 @@ export default function MemoryPage() {
   const { user } = useAuth();
   const params = useParams();
   const projectId = params.id as string;
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<MemoryItemOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(0);
@@ -17,12 +18,12 @@ export default function MemoryPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const url = `/api/v1/memory/?limit=50&offset=${page * 50}&project_id=${encodeURIComponent(projectId)}`;
+      const baseUrl = `/api/v1/memory/?limit=50&offset=${page * 50}&project_id=${encodeURIComponent(projectId)}`;
       if (filter) {
-        const data = await apiGet<any[]>(`/api/v1/memory/?limit=50&offset=${page * 50}&project_id=${encodeURIComponent(projectId)}&memory_type=${encodeURIComponent(filter)}`);
+        const data = await apiGet<MemoryItemOut[]>(`${baseUrl}&memory_type=${encodeURIComponent(filter)}`);
         setItems(data);
       } else {
-        const data = await apiGet<any[]>(`/api/v1/memory/?limit=50&offset=${page * 50}&project_id=${encodeURIComponent(projectId)}`);
+        const data = await apiGet<MemoryItemOut[]>(baseUrl);
         setItems(data);
       }
     } catch {}
@@ -31,7 +32,7 @@ export default function MemoryPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const tagsFor = (item: any): string[] => (item.extra_metadata?.tags as string[]) || [];
+  const tagsFor = (item: MemoryItemOut): string[] => (item.extra_metadata?.tags as string[]) || [];
 
   return (
     <div className="max-w-4xl mx-auto p-6">

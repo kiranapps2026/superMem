@@ -146,13 +146,20 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_safe(self) -> list[str]:
-        """In production, never allow wildcard origins with credentials."""
-        if self.is_production:
-            origins = [o for o in self.cors_origins_list if o != "*"]
-            if not origins:
+        """Never allow wildcard origins with credentials.
+
+        In production, enforce explicit origin list (no wildcard).
+        In development, restrict to localhost variants only.
+        """
+        origins = self.cors_origins_list
+        # Always strip wildcard when allow_credentials=True (prevents reflected-origin attacks)
+        origins = [o for o in origins if o != "*"]
+        if not origins:
+            if self.is_production:
                 raise ValueError("CORS_ORIGINS must be set in production (comma-separated URLs)")
-            return origins
-        return self.cors_origins_list
+            # Dev fallback: only localhost
+            origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"]
+        return origins
 
 
 settings = Settings()
