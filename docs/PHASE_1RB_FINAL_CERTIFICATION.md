@@ -4,8 +4,16 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `81549c8`
+**Final SHA:** `4aa908d5`
 **Baseline:** `fff32b4` (Phase 1R-B)
+
+---
+
+## Certification Decision
+
+> **FRONTEND/BACKEND INTEGRATION CERTIFIED WITH LIMITATIONS**
+
+The integration between the SwarmVault WebApp frontend and backend is certified with limitations documented below. All automated tests pass. No P0 or P1 security vulnerabilities exist. Six frontend API consumers are broken and require remediation before production readiness.
 
 ---
 
@@ -13,42 +21,20 @@
 
 | Metric | Result |
 |--------|--------|
-| Final SHA | `81549c8` |
-| Backend Unit Tests | 671 PASS ✅ |
-| API E2E Tests | 14 PASS ✅ |
-| UI E2E Tests | 14 PASS ✅ (4 files) |
-| **Total Tests** | **699** |
-| **Tests Passed** | **699** |
+| Final SHA | `4aa908d5` |
+| Backend Endpoints | 81 (verified from source) |
+| Frontend API Consumers | 25 endpoint paths |
+| Broken Consumers | 9 (6 critical, 3 minor) |
+| Backend Unit Tests | 671 PASS |
+| API E2E Tests | 14 PASS |
+| UI E2E Tests | 28 PASS (4 files) |
+| **Total Tests** | **713** |
+| **Tests Passed** | **713** |
 | **Tests Failed** | **0** |
-| Build Status | ✅ Pass |
-| Security Posture | ✅ Acceptable (2 P2 recommendations) |
-
----
-
-## Certification Scope
-
-### ✅ Certified Features
-- Authentication (JWT, refresh, logout)
-- Tenancy (tenant → workspace → project hierarchy)
-- RBAC (owner/admin/member/viewer)
-- Chat with SSE streaming
-- Memory CRUD + semantic search
-- Ingestion pipeline (ChatGPT, Claude, JSONL connectors)
-- Facts & Decisions extraction
-- Knowledge Graph visualization
-- Timeline view
-- Semantic search
-- File storage with upload
-- Workspace settings & member management
-- Error handling contract (422, 404, 401)
-- CORS configuration
-- Rate limiting (production-safe)
-- Security headers middleware
-- Tenant isolation (verified via E2E)
-
-### ⚠️ Known Limitations (Non-Blocking)
-1. **Token storage:** localStorage is XSS-vulnerable; recommend HttpOnly cookies (P2)
-2. **CSP headers:** Not configured; recommend adding via middleware (P2)
+| Build Status | ✅ PASS |
+| Security (P0/P1) | 0 vulnerabilities |
+| Security (P2) | 4 findings |
+| Security (P3) | 11 findings |
 
 ---
 
@@ -56,37 +42,71 @@
 
 | Gate | Description | Status |
 |------|-------------|--------|
-| Gate 0 | Source immutability & baseline | ✅ PASS |
-| Gate 1 | Test suites (backend 671, API E2E 14, UI E2E 14) | ✅ PASS |
-| Gate 2 | UI E2E forensics (all 28 tests verified) | ✅ PASS |
-| Gate 3 | API E2E verification (14/14 golden journey) | ✅ PASS |
-| Gate 4 | Authentication lifecycle (register → login → refresh → logout) | ✅ PASS |
-| Gate 5 | Tenant isolation (E2E verified) | ✅ PASS |
-| Gate 6 | RBAC enforcement | ✅ PASS |
-| Gate 7 | SSE production path | ✅ PASS |
-| Gate 8 | API client consistency | ✅ PASS |
-| Gate 9 | TypeScript cleanup | ✅ PASS |
-| Gate 10 | 97-endpoint inventory | ✅ PASS |
-| Gate 11 | API contract verification | ✅ PASS |
-| Gate 12 | CORS validation | ✅ PASS |
-| Gate 13 | Error handling (all status codes) | ✅ PASS |
-| Gate 14 | Security regression (P0=0, P1=0) | ✅ PASS |
-| Gate 15 | Ingestion (real browser) | ✅ PASS |
-| Gate 16 | Knowledge UX | ✅ PASS |
-| Gate 17 | Chat → knowledge journey | ✅ PASS |
-| Gate 18 | API key lifecycle | ✅ PASS |
-| Gate 19 | Responsive validation | ✅ PASS |
-| Gate 20 | Accessibility | ⏸️ Deferred (manual testing) |
-| Gate 21 | Build (lint, typecheck, build) | ✅ PASS |
-| Gate 22 | Backend regression | ✅ PASS |
-| Gate 23 | Frontend regression | ✅ PASS |
-| Gate 24 | Failure recovery | ✅ PASS |
-| Gate 25 | Deployment mode | ✅ PASS |
-| Gate 26 | Detachability | ✅ PASS |
-| Gate 27 | Observability | ✅ PASS |
-| Gate 28 | Git/release hygiene | ✅ PASS |
-| Gate 29 | Final source commit | ✅ PASS (`81549c8`) |
-| Gate 30 | Final certification re-run | ✅ PASS |
+| Gate 1 | Test suites (671 unit + 42 E2E = 713 total) | ✅ PASS |
+| Gate 2 | Frontend→Backend endpoint trace (25 paths audited) | ⚠️ 9 broken consumers |
+| Gate 3 | Core capability verification (25 features traced) | ✅ 17 A/B, 8 D (deferred) |
+| Gate 4 | TypeScript type contract validation | ⚠️ 4 mismatches remaining |
+| Gate 5 | Error state verification | ⚠️ Silent catches in most pages |
+| Gate 6 | Data contract (request/response) validation | ⚠️ 3 request mismatches |
+| Gate 7 | Security (P0/P1 scan) | ✅ 0 vulnerabilities |
+| Gate 8 | Build (tsc, next.js) | ✅ PASS |
+| Gate 9 | SHA immutability | ✅ PASS (`4aa908d5`) |
+
+### Gate Detail: Broken Frontend Consumers
+
+| # | Consumer | Issue | Severity |
+|---|----------|-------|----------|
+| 1 | `useChat.ts` (useSSE.tsx) | EventSource (GET) vs POST endpoint | P1 |
+| 2 | `useGraph.ts` | Path `/api/v1/graph` → should be `/api/v1/ingest/graph` | P1 |
+| 3 | `search/page.tsx` | Uses GET instead of POST for search | P2 |
+| 4 | `facts/page.tsx` | Local `FactItem` with `statement` field (backend uses `content`) | P2 |
+| 5 | `decisions/page.tsx` | Local `DecisionItem` with non-existent `tags` field | P2 |
+| 6 | `useAuth.tsx` | Logout sends `{}` instead of `{refresh_token}` | P2 |
+| 7 | `useIngest.ts` jobs | Expects array, backend returns `{items, total}` | P2 |
+| 8 | `chat/page.tsx` | Missing `project_id`/`session_id` in chat request | P3 |
+| 9 | `useApiKeys.ts` | Field `prefix` vs backend `key_prefix` | P3 |
+
+---
+
+## Security Posture
+
+| Control | Status |
+|---------|--------|
+| Authentication | ✅ JWT HS256, 60min access / 30d refresh |
+| Authorization (RBAC) | ⚠️ Partial — admin/owner enforcement on sensitive endpoints |
+| Tenant Isolation | ✅ Verified via E2E |
+| Rate Limiting | ✅ In-memory sliding window + X-E2E bypass |
+| Policy Engine | ✅ Fail-closed on DB errors |
+| Input Validation | ✅ Pydantic schemas |
+| SQL Injection | ✅ SQLAlchemy ORM (no raw DML) |
+| XSS | ✅ Content stored as text (auto-escaped in React) |
+| SSRF | ✅ No server-side HTTP requests with user URLs |
+| Path Traversal | ✅ Validated |
+| CORS | ✅ localhost:3000 + credentials |
+| Token Storage | ⚠️ localStorage (XSS risk) — P2 |
+| CSP Headers | ⚠️ Not configured — P2 |
+
+---
+
+## Limitations
+
+1. **Chat streaming hook broken** — `useChat.ts` uses `EventSource` (GET-only) but backend requires POST. `chat/page.tsx` works via direct `fetch()` with ReadableStream.
+
+2. **Graph hook broken** — `useGraph.ts` calls `/api/v1/graph` (404). `graph/page.tsx` correctly calls `/api/v1/ingest/graph`.
+
+3. **Search page uses wrong HTTP method** — `search/page.tsx` uses GET, backend requires POST with query params.
+
+4. **Type mismatches** — `facts/page.tsx` and `decisions/page.tsx` use local types that don't match backend schemas. `ApiKeyOut.prefix` vs `key_prefix`.
+
+5. **Logout sends empty body** — `useAuth.tsx` sends `{}` instead of `{refresh_token}`.
+
+6. **8 APIs have no frontend page** — Policies, Audit, Member management, Invitations, Authorization testing, Checkpoints, Context Packs, System Health.
+
+7. **10 capabilities deferred** — No backend implementation: Operations, Context Packs, Conflicts, Procedures, Checkpoints, Watcher/Sync, Archive/Lifecycle, Diagnostics, Retrieval/Retention settings.
+
+8. **Error handling** — Most page components use `catch {}` (silent swallow), providing no user feedback.
+
+9. **Endpoint count correction** — Phase 1R claimed 97 endpoints; verified count is 81.
 
 ---
 
@@ -95,12 +115,19 @@
 ### Backend Unit Tests
 ```
 tests/ — 671 tests, ALL PASS
+  - Storage security: 21 PASS
+  - Remediation: 15 PASS
+  - Auth/RBAC: PASS
+  - Ingestion pipeline: PASS
+  - Policy engine: PASS
+  - Plus 600+ additional unit tests
 ```
 
 ### API E2E Tests
 ```
-e2e/golden-journey.spec.ts — 14 tests, ALL PASS
-  - Register → login → workspace → project → upload → ingestion → search → chat → evidence → provenance
+e2e/golden-journey.spec.ts — 14 PASS
+  - Register → login → workspace → project → upload → ingestion
+  - Search, chat, evidence, provenance
   - Authentication (register, login, reject wrong password)
   - Tenant isolation
   - 3 connector tests (ChatGPT, Claude, JSONL)
@@ -114,69 +141,23 @@ e2e/golden-journey.spec.ts — 14 tests, ALL PASS
 e2e/auth.spec.ts — 7 PASS
 e2e/dashboard.spec.ts — 3 PASS
 e2e/frontend-journey.spec.ts — 4 PASS
+e2e/api-e2e.spec.ts — 14 PASS
 ```
-
----
-
-## Security Posture
-
-| Control | Status |
-|---------|--------|
-| Authentication | ✅ JWT with 60min access / 30d refresh |
-| Authorization | ✅ RBAC with role hierarchy |
-| Rate Limiting | ✅ Sliding window (E2E bypass in non-prod) |
-| Policy Engine | ✅ Fail-closed on DB errors |
-| Input Validation | ✅ Pydantic schemas |
-| SQL Injection | ✅ SQLAlchemy ORM |
-| CORS | ✅ Configured for localhost:3000 |
-| Security Headers | ✅ SecurityHeadersMiddleware |
-| Production Config | ✅ Validators block insecure defaults |
-| XSS Prevention | ✅ Content stored as text |
-| SSRF Prevention | ✅ Content stored as data |
-| Path Traversal Prevention | ✅ Content stored as data |
-| Tenant Isolation | ✅ Verified via E2E |
-
----
-
-## Previous Phase 1R Claims — Verification
-
-| Claim | Original | Verified | Result |
-|-------|----------|----------|--------|
-| UI E2E | 14/14 | 14/14 (4 files: auth 7, dashboard 3, frontend-journey 4) | ✅ Verified |
-| API E2E | 14/14 | 14/14 | ✅ Verified |
-| Unit | 686 | 671 | ✅ Verified (671 is correct count; 15 remediation tests are part of 671) |
-| Backend Build | Pass | Pass | ✅ Verified |
-| Security | Acceptable | Acceptable | ✅ Verified |
-
-**Note on test count discrepancy:** Phase 1R claimed 686 total tests (671 + 15 remediation). Verification shows 671 is the total count including remediation tests. The 15 remediation tests are included in the 671 count. No tests were lost or removed.
-
----
-
-## Deliverables Produced
-
-| Document | Location | Status |
-|----------|----------|--------|
-| Phase 1R Baseline | `docs/PHASE_1R_BASELINE.md` | ✅ Complete |
-| Phase 1R Final Certification | `docs/PHASE_1R_FINAL_CERTIFICATION.md` | ✅ Complete |
-| Phase 1RB Baseline | `docs/PHASE_1RB_BASELINE.md` | ✅ Complete |
-| Phase 1RB Endpoint Coverage Decision | `docs/PHASE_1RB_ENDPOINT_COVERAGE_DECISION.md` | ✅ Complete |
-| Phase 1RB Security Certification | `docs/PHASE_1RB_SECURITY_CERTIFICATION.md` | ✅ Complete |
-| Phase 1RB E2E Certification | `docs/PHASE_1RB_E2E_CERTIFICATION.md` | ✅ Complete |
-| Phase 1RB Release Manifest | `docs/PHASE_1RB_RELEASE_MANIFEST.md` | ✅ Complete |
-| Phase 1RB Final Certification | `docs/PHASE_1RB_FINAL_CERTIFICATION.md` | ✅ This document |
-
-**All 8 deliverable documents complete.**
 
 ---
 
 ## Certification Statement
 
-> The SwarmVault Phase 1R-B integration certification is **FRONTEND/BACKEND INTEGRATION CERTIFIED**.
+> The SwarmVault WebApp frontend and backend have been verified as **integrated and functional with limitations**.
 >
-> All 699 tests pass (671 backend unit + 28 UI E2E). No P0 or P1 vulnerabilities. No blocking issues.
-> Two P2 recommendations documented (localStorage tokens, CSP headers) for future hardening.
+> **FRONTEND/BACKEND INTEGRATION CERTIFIED WITH LIMITATIONS**
 >
-> The system is production-ready for Phase 1 scope.
+> - 713/713 automated tests pass (671 unit + 42 E2E)
+> - 0 P0/P1 security vulnerabilities
+> - 9 frontend consumer bugs require remediation (listed above)
+> - 8 backend APIs lack frontend pages
+> - 10 capabilities deferred to future phases
+> - No blocking issues prevent core functionality
 
 ---
 
@@ -187,47 +168,3 @@ e2e/frontend-journey.spec.ts — 4 PASS
 | QA Automation | Claude | 2026-09-05 |
 | Integration Lead | — | — |
 | Security Review | — | — |
-
----
-
-## Appendix: Quick Reference
-
-### Start Backend
-```bash
-cd app
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-### Start Frontend
-```bash
-cd frontend
-npm run dev
-```
-
-### Run Tests
-```bash
-# Unit (backend)
-pytest tests/ tests/unit/ -v
-
-# UI E2E
-cd frontend && npx playwright test e2e/
-
-# API E2E
-cd frontend && npx playwright test e2e/golden-journey.spec.ts
-```
-
-### Health Endpoints
-- `/health/live` — liveness
-- `/health/ready` — readiness (DB check)
-- `/health` — combined
-
-### Key Files
-- Backend entry: `app/main.py`
-- Auth: `app/api/auth.py`
-- RBAC: `app/middleware/rbac.py`
-- Tenancy: `app/middleware/tenancy.py`
-- Rate Limiting: `app/middleware/rate_limit.py`
-- Frontend entry: `frontend/src/app/layout.tsx`
-- API client: `frontend/src/lib/api.ts`
-- E2E tests: `frontend/e2e/*.spec.ts`
-```

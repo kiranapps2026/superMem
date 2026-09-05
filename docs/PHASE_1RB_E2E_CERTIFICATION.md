@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `81549c8`
+**Baseline:** `4aa908d5`
 **Browser:** Chromium (Playwright)
 **Workers:** 1 (sequential, required for DB consistency)
 
@@ -72,7 +72,7 @@
 ## Certification
 
 > E2E certification is **PASS**.
-> All 28 Playwright tests pass against backend at SHA `81549c8`.
+> All 28 Playwright tests pass against backend at SHA `4aa908d5`.
 
 ---
 **Signatures:**

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `81549c8`
+**Baseline:** `4aa908d5`
 **Framework:** OWASP Top 10 + CWE + custom SwarmVault security controls
 
 ---

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `81549c8`
+**Final SHA:** `4aa908d5`
 **Branch:** master
 
 ---
@@ -28,7 +28,7 @@
 ## Git State
 
 ```
-SHA: 81549c8
+SHA: 4aa908d5
 Branch: master
 Parent: 2d4f505 ("docs(phase-1rb): add 28 UI screenshots and update screenshot spec")
 ```
