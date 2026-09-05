@@ -12,13 +12,16 @@
 
 ## Test Suite Summary
 
-| Suite | File | Tests | Pass | Fail | Status |
-|-------|------|-------|------|------|--------|
-| Auth Pages | auth.spec.ts | 7 | 7 | 0 | ✅ |
-| Dashboard | dashboard.spec.ts | 3 | 3 | 0 | ✅ |
-| Frontend UI Journey | frontend-journey.spec.ts | 4 | 4 | 0 | ✅ |
-| Golden Journey (API) | golden-journey.spec.ts | 14 | 14 | 0 | ✅ |
-| **Total UI E2E** | | **28** | **28** | **0** | **✅** |
+| Suite | File | Type | Tests | Pass | Fail | Status |
+|-------|------|------|-------|------|------|--------|
+| Auth Pages | auth.spec.ts | UI | 7 | 7 | 0 | ✅ |
+| Dashboard | dashboard.spec.ts | UI | 3 | 3 | 0 | ✅ |
+| Frontend UI Journey | frontend-journey.spec.ts | UI | 4 | 4 | 0 | ✅ |
+| **Total UI E2E** | | | **14** | **14** | **0** | **✅** |
+| Golden Journey | golden-journey.spec.ts | API | 14 | 14 | 0 | ✅ |
+| API E2E | api-e2e.spec.ts | API | 14 | 14 | 0 | ✅ |
+| **Total API E2E** | | | **28** | **28** | **0** | **✅** |
+| **GRAND TOTAL** | | | **42** | **42** | **0** | **✅** |
 
 ---
 
