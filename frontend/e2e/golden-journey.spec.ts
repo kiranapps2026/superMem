@@ -9,7 +9,10 @@ async function apiRequest(
   token?: string,
   body?: any,
 ): Promise<{ status: number; data: any }> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-E2E': 'true',  // bypass rate limiting in test environments
+  };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE}${path}`, {
