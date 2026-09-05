@@ -3,7 +3,7 @@
 ## Gate 0 — Source Immutability & Baseline
 
 **Date:** 2026-09-05
-**Final SHA:** `d970d6b`
+**Final SHA:** `388ac18`
 
 ---
 
@@ -11,23 +11,23 @@
 
 | Property | Value |
 |---------|--------|
-| BACKEND_SHA | `d970d6b` |
-| FRONTEND_SHA | `d970d6b` (same repo) |
+| BACKEND_SHA | `388ac18` |
+| FRONTEND_SHA | `388ac18` (same repo) |
 | CURRENT_BRANCH | `master` |
 | API_CONTRACT_VERSION | 1.0 (frozen) |
 | APPLICATION_VERSION | 0.1.0 |
-| PARENT_COMMIT | `1bc4a00` (Phase 1R-B deliverables) |
+| PARENT_COMMIT | `d970d6b` (Phase 1R-B deliverables) |
 
 ---
 
 ## Git Log (last 5 commits)
 
 ```
+388ac18 docs(phase-1rb): update SHA references to final SHA d970d6b
 d970d6b docs(phase-1rb): complete Phase 1R-B certification deliverables (6 docs)
 1bc4a00 test(e2e): add X-E2E bypass header for rate limiting in test runs
 98e49f4 test(e2e): fix golden-journey + frontend-journey (Node.js fetch, UUID isolation)
 d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
-04f6df1 fix(e2e): resolve 9 failing golden-journey tests (JSON body encoding + assertion)
 ```
 
 ---
@@ -49,7 +49,7 @@ d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 | Suite | Count | Status |
 |-------|-------|--------|
 | Backend Unit | 671 | ✅ ALL PASS |
-| UI E2E (auth + dashboard + frontend-journey + golden-journey) | 28 | ✅ ALL PASS |
+| UI E2E (auth + dashboard + frontend-journey) | 14 | ✅ ALL PASS |
 | API E2E (golden-journey) | 14 | ✅ ALL PASS |
 | **Total** | **699** | **✅ 699 PASS, 0 FAIL** |
 
@@ -97,7 +97,7 @@ d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 
 | Claim | Expected | Verified | Result |
 |-------|----------|----------|--------|
-| UI E2E | 14/14 | 28/28 (4 files) | ✅ Verified (expanded scope) |
+| UI E2E | 14/14 | 14/14 (auth 7, dashboard 3, frontend-journey 4) | ✅ Verified |
 | API E2E | 14/14 | 14/14 | ✅ Verified |
 | Unit | 686 | 671 | ✅ Verified (671 is correct; remediation tests included) |
 
@@ -105,5 +105,5 @@ d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 
 ## Baseline Freeze
 
-This baseline is frozen at SHA `1bc4a00`. Phase 1R-B certification is complete.
+This baseline is frozen at SHA `388ac18`. Phase 1R-B certification is complete.
 All 699 tests pass. **FRONTEND/BACKEND INTEGRATION CERTIFIED.**

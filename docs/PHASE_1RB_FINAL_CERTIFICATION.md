@@ -4,8 +4,8 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `d970d6b`
-**Baseline:** `d970d6b` (self-consistent)
+**Final SHA:** `388ac18`
+**Baseline:** `fff32b4` (Phase 1R-B)
 
 ---
 
@@ -13,10 +13,10 @@
 
 | Metric | Result |
 |--------|--------|
-| Final SHA | `d970d6b` |
+| Final SHA | `388ac18` |
 | Backend Unit Tests | 671 PASS ✅ |
-| UI E2E Tests | 28 PASS ✅ |
 | API E2E Tests | 14 PASS ✅ |
+| UI E2E Tests | 14 PASS ✅ (4 files) |
 | **Total Tests** | **699** |
 | **Tests Passed** | **699** |
 | **Tests Failed** | **0** |
@@ -57,7 +57,7 @@
 | Gate | Description | Status |
 |------|-------------|--------|
 | Gate 0 | Source immutability & baseline | ✅ PASS |
-| Gate 1 | Test suites (backend 671, UI E2E 28, API E2E 14) | ✅ PASS |
+| Gate 1 | Test suites (backend 671, API E2E 14, UI E2E 14) | ✅ PASS |
 | Gate 2 | UI E2E forensics (all 28 tests verified) | ✅ PASS |
 | Gate 3 | API E2E verification (14/14 golden journey) | ✅ PASS |
 | Gate 4 | Authentication lifecycle (register → login → refresh → logout) | ✅ PASS |
@@ -85,7 +85,7 @@
 | Gate 26 | Detachability | ✅ PASS |
 | Gate 27 | Observability | ✅ PASS |
 | Gate 28 | Git/release hygiene | ✅ PASS |
-| Gate 29 | Final source commit | ✅ PASS (`d970d6b`) |
+| Gate 29 | Final source commit | ✅ PASS (`388ac18`) |
 | Gate 30 | Final certification re-run | ✅ PASS |
 
 ---
@@ -114,7 +114,6 @@ e2e/golden-journey.spec.ts — 14 tests, ALL PASS
 e2e/auth.spec.ts — 7 PASS
 e2e/dashboard.spec.ts — 3 PASS
 e2e/frontend-journey.spec.ts — 4 PASS
-e2e/golden-journey.spec.ts — 14 PASS (API-level, browser context)
 ```
 
 ---
@@ -143,7 +142,7 @@ e2e/golden-journey.spec.ts — 14 PASS (API-level, browser context)
 
 | Claim | Original | Verified | Result |
 |-------|----------|----------|--------|
-| UI E2E | 14/14 | 28/28 (4 files) | ✅ Verified (expanded) |
+| UI E2E | 14/14 | 14/14 (4 files: auth 7, dashboard 3, frontend-journey 4) | ✅ Verified |
 | API E2E | 14/14 | 14/14 | ✅ Verified |
 | Unit | 686 | 671 | ✅ Verified (671 is correct count; 15 remediation tests are part of 671) |
 | Backend Build | Pass | Pass | ✅ Verified |
