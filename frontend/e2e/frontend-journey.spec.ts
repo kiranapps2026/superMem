@@ -3,45 +3,33 @@ import { test, expect } from '@playwright/test';
 const FRONTEND = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 const API = 'http://localhost:8000';
 
+// API calls use Node.js fetch (bypasses CORS, sends proper HTTP).
+async function apiRequest(method: string, path: string, token?: string, body?: any) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const text = await res.text();
+  let data: any = text;
+  try { data = JSON.parse(text); } catch { /* keep raw */ }
+  return { status: res.status, data };
+}
+
 async function registerAndLogin(page: any) {
-  const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  const email = `e2e-${suffix}@test.com`;
-  const workspaceName = `E2E-WS-${suffix}`;
+  const unique = crypto.randomUUID();
+  const email = `fj-${unique}@test.com`;
   const password = 'TestPass123!';
 
+  const reg = await apiRequest('POST', '/api/v1/auth/register', undefined, {
+    email, password, name: 'FJ User', workspace_name: `FJ-WS-${unique}`,
+  });
+  expect(reg.status).toBe(201);
+
+  const login = await apiRequest('POST', '/api/v1/auth/login', undefined, { email, password });
+  expect(login.status).toBe(200);
+  const { access_token, refresh_token } = login.data;
+
+  // Set localStorage so the frontend sees the session
   await page.goto(FRONTEND);
-
-  // Register via browser fetch (exercises full CORS + auth flow)
-  const regResult = await page.evaluate(async ({ url, body }) => {
-    const res = await fetch(url + '/api/v1/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return { ok: res.ok, status: res.status, data: res.ok ? await res.json() : await res.text() };
-  }, { url: API, body: { email, password, name: 'E2E User', workspace_name: workspaceName } });
-
-  if (!regResult.ok) {
-    throw new Error(`Registration failed [${regResult.status}]: ${regResult.data}`);
-  }
-
-  // Login
-  const loginResult = await page.evaluate(async ({ url, body }) => {
-    const res = await fetch(url + '/api/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return { ok: res.ok, status: res.status, data: res.ok ? await res.json() : await res.text() };
-  }, { url: API, body: { email, password } });
-
-  if (!loginResult.ok) {
-    throw new Error(`Login failed [${loginResult.status}]: ${loginResult.data}`);
-  }
-
-  const { access_token, refresh_token } = loginResult.data;
-
-  // Store in localStorage
   await page.evaluate((tokens) => {
     localStorage.setItem('sv_tokens', JSON.stringify(tokens));
   }, { access_token, refresh_token });

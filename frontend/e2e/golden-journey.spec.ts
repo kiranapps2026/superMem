@@ -23,6 +23,11 @@ async function apiRequest(
   return { status: res.status, data };
 }
 
+// Use crypto.randomUUID for collision-free unique IDs across parallel tests
+function uid(): string {
+  return crypto.randomUUID();
+}
+
 function makeChatGPTConversation() {
   return JSON.stringify({
     mapping: {
@@ -80,7 +85,7 @@ function makeJSONLConversation() {
 
 test.describe('Golden Journey', () => {
   test('register → login → workspace → project → upload → ingestion → search → chat → evidence → provenance', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `golden-${unique}@test.com`;
     const password = 'SecurePass123!';
 
@@ -131,7 +136,7 @@ test.describe('Golden Journey', () => {
 
 test.describe('Authentication', () => {
   test('register creates new user', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `auth-${unique}@test.com`;
     const reg = await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'TestPass123!', name: 'Auth Test', workspace_name: `Auth-WS-${unique}`,
@@ -140,7 +145,7 @@ test.describe('Authentication', () => {
   });
 
   test('login returns tokens', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `login-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'TestPass123!', name: 'Login Test', workspace_name: `Login-WS-${unique}`,
@@ -152,7 +157,7 @@ test.describe('Authentication', () => {
   });
 
   test('login rejects wrong password', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `wrongpass-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'CorrectPass123!', name: 'Test', workspace_name: `WP-${unique}`,
@@ -171,7 +176,7 @@ test.describe('Authentication', () => {
 
 test.describe('Tenant Isolation', () => {
   test('tenant A and B are isolated', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
 
     const emailA = `iso-a-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
@@ -207,7 +212,7 @@ test.describe('Tenant Isolation', () => {
 
 test.describe('Connectors', () => {
   test('ChatGPT connector normalizes correctly', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `conn-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'Pass123!', name: 'C', workspace_name: `WS-${unique}`,
@@ -228,7 +233,7 @@ test.describe('Connectors', () => {
   });
 
   test('Claude connector normalizes correctly', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `claude-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'Pass123!', name: 'C', workspace_name: `WS-${unique}`,
@@ -249,7 +254,7 @@ test.describe('Connectors', () => {
   });
 
   test('JSONL connector normalizes correctly', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `jsonl-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'Pass123!', name: 'C', workspace_name: `WS-${unique}`,
@@ -274,7 +279,7 @@ test.describe('Connectors', () => {
 
 test.describe('Security - Prompt Injection', () => {
   test('malicious content stored as data, not executed', async () => {
-    const unique = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const unique = uid();
     const email = `inject-${unique}@test.com`;
     await apiRequest('POST', '/api/v1/auth/register', undefined, {
       email, password: 'Pass123!', name: 'Sec', workspace_name: `Sec-WS-${unique}`,
