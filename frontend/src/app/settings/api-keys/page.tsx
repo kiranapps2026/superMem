@@ -113,7 +113,7 @@ export default function ApiKeysPage() {
                 <Key size={16} className="text-gray-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{k.name}</p>
-                  <p className="text-xs text-gray-500 font-mono">{maskKey(k.prefix)} · Created {formatDate(k.created_at)} · Last used {formatDate(k.last_used_at)}</p>
+                  <p className="text-xs text-gray-500 font-mono">{maskKey(k.key_prefix)} · Created {formatDate(k.created_at)} · Last used {formatDate(k.last_used_at)}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button

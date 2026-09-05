@@ -4,16 +4,7 @@ import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
 import { CheckSquare } from 'lucide-react';
-
-interface DecisionItem {
-  id: string;
-  content: string;
-  temporal_status: string;
-  confidence: number;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
+import { DecisionItem } from '@/types/api';
 
 export default function DecisionsPage() {
   const { user } = useAuth();
@@ -49,11 +40,7 @@ export default function DecisionsPage() {
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`text-xs px-2 py-0.5 rounded ${d.temporal_status === 'current' ? 'bg-green-400/10 text-green-400' : 'bg-yellow-400/10 text-yellow-400'}`}>{d.temporal_status}</span>
-                {d.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {d.tags.map((t) => <span key={t} className="text-xs text-gray-500 bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">{t}</span>)}
-                  </div>
-                )}
+                {d.authority != null && <span className="text-xs text-gray-500">authority: {d.authority}</span>}
               </div>
             </div>
           ))}

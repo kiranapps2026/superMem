@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { SourceOut, SourceListResponse, FactItem, DecisionItem, IngestJobOut, IngestUploadResponse, PaginatedResponse } from '@/types/api';
+import { SourceOut, SourceListResponse, FactItem, DecisionItem, IngestJobOut, IngestJobListResponse, IngestUploadResponse, PaginatedResponse } from '@/types/api';
 import { apiGet, apiPost, apiDelete, uploadFile } from '@/lib/api';
 
 export function useSources(projectId: string) {
@@ -115,6 +115,7 @@ export function useUploadFile(projectId: string) {
 
 export function useIngestJobs() {
   const [jobs, setJobs] = useState<IngestJobOut[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,8 +123,9 @@ export function useIngestJobs() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<IngestJobOut[]>('/api/v1/ingest/jobs');
-      setJobs(data);
+      const data = await apiGet<IngestJobListResponse>('/api/v1/ingest/jobs');
+      setJobs(data.items);
+      setTotal(data.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
     } finally {
@@ -133,5 +135,5 @@ export function useIngestJobs() {
 
   useEffect(() => { load(); }, [load]);
 
-  return { jobs, loading, error, reload: load };
+  return { jobs, total, loading, error, reload: load };
 }

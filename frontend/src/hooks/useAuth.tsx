@@ -33,17 +33,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, loading: true, error: null }));
     const data = await apiPost<TokenPair>('/api/v1/auth/login', { email, password });
     storeTokens(data);
-    setState({ user: data.user, loading: false, error: null });
+    // Fetch user separately since TokenResponse doesn't include user
+    const user = await apiGet<UserInfo>('/api/v1/auth/me');
+    setState({ user, loading: false, error: null });
   }, []);
 
   const register = useCallback(async (data: RegisterRequest) => {
     setState((s) => ({ ...s, loading: true, error: null }));
-    const res = await apiPost<TokenPair & { user: UserInfo }>('/api/v1/auth/register', data);
-    setState({ user: res.user, loading: false, error: null });
+    const res = await apiPost<TokenPair>('/api/v1/auth/register', data);
+    storeTokens(res);
+    // Fetch user separately since TokenResponse doesn't include user
+    const user = await apiGet<UserInfo>('/api/v1/auth/me');
+    setState({ user, loading: false, error: null });
   }, []);
 
   const logout = useCallback(async () => {
-    try { await apiPost('/api/v1/auth/logout', {}); } catch {}
+    try {
+      const refresh_token = getToken();
+      const tokensRaw = localStorage.getItem('sv_tokens');
+      const refreshToken = tokensRaw ? JSON.parse(tokensRaw)?.refresh_token : null;
+      if (refreshToken) {
+        await apiPost('/api/v1/auth/logout', { refresh_token: refreshToken });
+      }
+    } catch {
+      // logout must not throw — clear local state regardless
+    }
     clearTokens();
     setState({ user: null, loading: false, error: null });
   }, []);

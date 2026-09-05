@@ -4,16 +4,7 @@ import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
 import { GitBranch } from 'lucide-react';
-
-interface FactItem {
-  id: string;
-  statement: string;
-  predicate: string | null;
-  authority: string;
-  confidence: number;
-  status: string;
-  created_at: string;
-}
+import { FactItem } from '@/types/api';
 
 export default function FactsPage() {
   const { user } = useAuth();
@@ -43,12 +34,12 @@ export default function FactsPage() {
         <div className="space-y-2">
           {facts.map((f) => (
             <div key={f.id} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3">
-              <p className="text-sm">{f.statement}</p>
+              <p className="text-sm">{f.content}</p>
+              <p className="text-xs text-gray-500 mt-1">{f.subject} — {f.predicate} → {f.object}</p>
               <div className="flex items-center gap-2 mt-2">
-                {f.predicate && <span className="text-xs text-gray-500">{f.predicate}</span>}
                 <span className={`text-xs ${f.confidence >= 0.8 ? 'text-green-400' : f.confidence >= 0.5 ? 'text-yellow-400' : 'text-red-400'}`}>{Math.round(f.confidence * 100)}%</span>
-                <span className="text-xs text-gray-500">{f.status}</span>
-                <span className="text-xs text-gray-500">{f.authority}</span>
+                <span className="text-xs text-gray-500">{f.temporal_status}</span>
+                <span className="text-xs text-gray-500">{f.source_id?.slice(0, 8) || '—'}</span>
               </div>
             </div>
           ))}

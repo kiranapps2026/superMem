@@ -1,10 +1,8 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { ChatRequest, ChatResponse } from '@/types/api';
-import { streamChat } from '@/lib/api';
-import { useSSE } from '@/hooks/useSSE';
 import { ChatStreamEvent } from '@/types/api';
+import { useSSE } from '@/hooks/useSSE';
 
 export interface ChatMessage {
   id: string;
@@ -25,60 +23,62 @@ export function useChat(projectId?: string) {
   const cancelRef = useRef<(() => void) | null>(null);
   const { stream, stop } = useSSE();
 
-  const sendMessage = useCallback(async (message: string) => {
-    if (!message.trim() || streaming) return;
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: message };
-    setMessages((m) => [...m, userMsg]);
-    setLoading(true);
-    setError(null);
-    setStreaming(true);
+  const sendMessage = useCallback(
+    async (message: string) => {
+      if (!message.trim() || streaming) return;
+      const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: message };
+      setMessages((m) => [...m, userMsg]);
+      setLoading(true);
+      setError(null);
+      setStreaming(true);
 
-    const assistantId = crypto.randomUUID();
-    const assistantMsg: ChatMessage = { id: assistantId, role: 'assistant', content: '' };
-    setMessages((m) => [...m, assistantMsg]);
+      const assistantId = crypto.randomUUID();
+      const assistantMsg: ChatMessage = { id: assistantId, role: 'assistant', content: '' };
+      setMessages((m) => [...m, assistantMsg]);
 
-    try {
-      const abortController = new AbortController();
-      const url = `/api/v1/chat/stream?project_id=${encodeURIComponent(projectId || '')}`;
-      const cleanup = stream(url,
-        (event: ChatStreamEvent) => {
-          if (event.type === 'token' && event.content) {
+      try {
+        cancelRef.current = stream(
+          message,
+          (event: ChatStreamEvent) => {
+            if (event.type === 'token' && event.content) {
+              setMessages((ms) =>
+                ms.map((m) => (m.id === assistantId ? { ...m, content: m.content + event.content } : m))
+              );
+            } else if (event.type === 'sources' && event.sources) {
+              setMessages((ms) =>
+                ms.map((m) => (m.id === assistantId ? { ...m, sources: event.sources } : m))
+              );
+            } else if (event.type === 'error' && event.error) {
+              setMessages((ms) =>
+                ms.map((m) => (m.id === assistantId ? { ...m, content: `Error: ${event.error}` } : m))
+              );
+            }
+          },
+          (metadata) => {
             setMessages((ms) =>
-              ms.map((m) => m.id === assistantId ? { ...m, content: m.content + event.content } : m)
+              ms.map((m) => (m.id === assistantId ? { ...m, metadata } : m))
             );
-          } else if (event.type === 'done' && event.metadata) {
+            setStreaming(false);
+            setLoading(false);
+          },
+          (detail) => {
+            setError(detail);
             setMessages((ms) =>
-              ms.map((m) => m.id === assistantId ? { ...m, metadata: event.metadata } : m)
+              ms.map((m) => (m.id === assistantId ? { ...m, content: `Error: ${detail}` } : m))
             );
-          } else if (event.type === 'error') {
-            setMessages((ms) =>
-              ms.map((m) => m.id === assistantId ? { ...m, content: `Error: ${event.error || 'Unknown'}` } : m)
-            );
-          }
-        },
-        (metadata) => {
-          setMessages((ms) =>
-            ms.map((m) => m.id === assistantId ? { ...m, metadata } : m)
-          );
-          setStreaming(false);
-          setLoading(false);
-        },
-        (detail) => {
-          setError(detail);
-          setMessages((ms) =>
-            ms.map((m) => m.id === assistantId ? { ...m, content: `Error: ${detail}` } : m)
-          );
-          setStreaming(false);
-          setLoading(false);
-        }
-      );
-      cancelRef.current = cleanup;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Chat failed');
-      setStreaming(false);
-      setLoading(false);
-    }
-  }, [projectId, streaming, stream]);
+            setStreaming(false);
+            setLoading(false);
+          },
+          { projectId: projectId || undefined }
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Chat failed');
+        setStreaming(false);
+        setLoading(false);
+      }
+    },
+    [stream, projectId]
+  );
 
   const cancelStream = useCallback(() => {
     stop();
@@ -88,7 +88,10 @@ export function useChat(projectId?: string) {
     setLoading(false);
   }, [stop]);
 
-  const clear = useCallback(() => { setMessages([]); setError(null); }, []);
+  const clear = useCallback(() => {
+    setMessages([]);
+    setError(null);
+  }, []);
 
   return { messages, loading, streaming, error, sendMessage, cancelStream, clear };
 }

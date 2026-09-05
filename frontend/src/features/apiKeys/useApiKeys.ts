@@ -5,7 +5,7 @@ import { apiGet, apiPost, apiDelete, apiPatch } from '@/lib/api';
 
 export interface ApiKeyOut {
   id: string;
-  prefix: string;
+  key_prefix: string;
   name: string;
   last_used_at: string | null;
   expires_at: string | null;

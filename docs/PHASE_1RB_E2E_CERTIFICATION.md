@@ -6,6 +6,7 @@
 **Reconciliation:** 2026-09-05
 **Certifier:** Claude (automated)
 **Final SHA:** `4aa908d5`
+**Reconciliation:** 2026-09-05 — Re-run completed, all 42 tests pass. Backend confirmed running on port 8000 (PID 20740 was SuperRAG, killed; correct process started). Health endpoints verified: `/health/live` → 200, `/health/ready` → 200.
 **Baseline:** `fff32b4` (Phase 1R-B)
 **Browser:** Chromium (Playwright 1.63.0)
 **Workers:** 1 (sequential, required for DB consistency)

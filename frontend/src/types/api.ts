@@ -1,7 +1,7 @@
 // Aligned with FastAPI backend schemas in app/schemas.py
 
 export interface UserInfo { id: string; email: string; name: string | null; workspace_id: string; tenant_id: string; }
-export interface TokenPair { access_token: string; refresh_token: string; token_type: string; expires_in: number; user: UserInfo; }
+export interface TokenPair { access_token: string; refresh_token: string; token_type: string; expires_in: number; }
 export interface RegisterRequest { email: string; password: string; name: string; workspace_name: string; }
 
 export interface WorkspaceDetail { id: string; name: string; slug: string; tenant_id: string; description: string | null; created_at: string | null; }
@@ -72,8 +72,11 @@ export interface FactListResponse { items: FactItem[]; total: number; }
 
 export interface DecisionItem {
   id: string; workspace_id: string; project_id: string | null;
-  content: string; temporal_status: string;
-  confidence: number;
+  source_id: string | null;
+  content: string; context: string | null;
+  confidence: number; authority: number;
+  temporal_status: string;
+  superseded_by_id: string | null;
   created_at: string; updated_at: string;
 }
 export interface DecisionListResponse { items: DecisionItem[]; total: number; }
@@ -118,7 +121,14 @@ export interface IngestUploadResponse {
 }
 export interface IngestQueued { job_id: string; status: string; message: string; }
 
-export interface IngestJobOut { id: string; project_id: string; workspace_id: string; source_type: string; status: string; stage: string | null; progress: number; error_message: string | null; estimated_records: number | null; created_at: string | null; started_at: string | null; completed_at: string | null; }
+export interface IngestJobOut {
+  id: string; project_id: string; workspace_id: string;
+  source_type: string; status: string; stage: string | null;
+  progress: number; error_message: string | null;
+  estimated_records: number | null;
+  created_at: string | null; started_at: string | null; completed_at: string | null;
+}
+export interface IngestJobListResponse { items: IngestJobOut[]; total: number; }
 
 export interface ProvenanceOut {
   id: string; workspace_id: string; project_id: string | null;
@@ -145,7 +155,7 @@ export type MemoryType = 'semantic_memory' | 'episodic_memory' | 'procedural_mem
 
 export interface ApiKeyOut {
   id: string;
-  prefix: string;
+  key_prefix: string;
   name: string;
   last_used_at: string | null;
   expires_at: string | null;
