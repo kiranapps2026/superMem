@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `9b5a15b`
+**Baseline:** `81549c8`
 
 ---
 
@@ -31,7 +31,7 @@ This document certifies the security posture of the SwarmVault system after Phas
 
 ## Unit Test Evidence
 
-All security-related unit tests pass (verified against baseline `1bc4a00`):
+All security-related unit tests pass (verified against baseline `81549c8`):
 
 | Test File | Tests | Status |
 |-----------|-------|--------|

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `388ac18`
+**Final SHA:** `81549c8`
 **Baseline:** `fff32b4` (Phase 1R-B)
 
 ---
@@ -13,7 +13,7 @@
 
 | Metric | Result |
 |--------|--------|
-| Final SHA | `388ac18` |
+| Final SHA | `81549c8` |
 | Backend Unit Tests | 671 PASS ✅ |
 | API E2E Tests | 14 PASS ✅ |
 | UI E2E Tests | 14 PASS ✅ (4 files) |
@@ -85,7 +85,7 @@
 | Gate 26 | Detachability | ✅ PASS |
 | Gate 27 | Observability | ✅ PASS |
 | Gate 28 | Git/release hygiene | ✅ PASS |
-| Gate 29 | Final source commit | ✅ PASS (`388ac18`) |
+| Gate 29 | Final source commit | ✅ PASS (`81549c8`) |
 | Gate 30 | Final certification re-run | ✅ PASS |
 
 ---

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `9b5a15b`
+**Final SHA:** `81549c8`
 **Branch:** master
 
 ---
@@ -28,9 +28,9 @@
 ## Git State
 
 ```
-SHA: 1bc4a00
+SHA: 81549c8
 Branch: master
-Parent: 98e49f4 ("test(e2e): fix golden-journey + frontend-journey")
+Parent: 2d4f505 ("docs(phase-1rb): add 28 UI screenshots and update screenshot spec")
 ```
 
 ### Files Changed in Phase 1R-B

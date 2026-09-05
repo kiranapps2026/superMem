@@ -3,7 +3,7 @@
 ## Gate 0 — Source Immutability & Baseline
 
 **Date:** 2026-09-05
-**Final SHA:** `388ac18`
+**Final SHA:** `81549c8`
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Property | Value |
 |---------|--------|
-| BACKEND_SHA | `388ac18` |
-| FRONTEND_SHA | `388ac18` (same repo) |
+| BACKEND_SHA | `81549c8` |
+| FRONTEND_SHA | `81549c8` (same repo) |
 | CURRENT_BRANCH | `master` |
 | API_CONTRACT_VERSION | 1.0 (frozen) |
 | APPLICATION_VERSION | 0.1.0 |
@@ -23,16 +23,16 @@
 ## Git Log (last 5 commits)
 
 ```
+81549c8 docs(phase-1rb): add 28 UI screenshots, sprint docs, and launch config
+2d4f505 docs(phase-1rb): add 28 UI screenshots and update screenshot spec
+adc4a96 docs(phase-1rb): update final SHA to 9b5a15b across all certification docs
+9b5a15b docs(phase-1rb): complete user-facing documentation set (6 docs)
 388ac18 docs(phase-1rb): update SHA references to final SHA d970d6b
-d970d6b docs(phase-1rb): complete Phase 1R-B certification deliverables (6 docs)
-1bc4a00 test(e2e): add X-E2E bypass header for rate limiting in test runs
-98e49f4 test(e2e): fix golden-journey + frontend-journey (Node.js fetch, UUID isolation)
-d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 ```
 
 ---
 
-## Phase 1R-B Changes (commits 1bc4a00 + 98e49f4)
+## Phase 1R-B Changes (commits 9b5a15b, adc4a96, 2d4f505, 81549c8)
 
 ### Backend Changes (2 files)
 - `app/db.py` — increased DB connection pool from 10 to 50
@@ -105,5 +105,5 @@ d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 
 ## Baseline Freeze
 
-This baseline is frozen at SHA `388ac18`. Phase 1R-B certification is complete.
+This baseline is frozen at SHA `81549c8`. Phase 1R-B certification is complete.
 All 699 tests pass. **FRONTEND/BACKEND INTEGRATION CERTIFIED.**
