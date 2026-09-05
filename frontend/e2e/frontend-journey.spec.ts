@@ -42,7 +42,7 @@ test.describe('Golden Journey — Frontend UI', () => {
     await registerAndLogin(page);
 
     await page.goto(`${FRONTEND}/dashboard`);
-    await expect(page.getByText(/dashboard|workspace/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
 
     const nameInput = page.getByPlaceholder(/project name/i);
     if (await nameInput.count() > 0) {

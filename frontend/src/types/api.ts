@@ -168,10 +168,17 @@ export interface ApiKeyCreateResponse extends ApiKeyOut {
 // ── Dashboard ───────────────────────────────────────────────────────
 
 export interface DashboardSummary {
-  project_count: number;
-  memory_count: number;
-  session_count: number;
-  source_count: number;
+  workspace_id: string;
+  total_memories: number;
+  total_sources: number;
+  total_sessions: number;
+  total_facts: number;
+  total_decisions: number;
+  total_graph_nodes: number;
+  total_graph_edges: number;
+  recent_memories: number;
+  recent_sessions: number;
+  memory_types: Record<string, number>;
 }
 
 // ── User / Auth ─────────────────────────────────────────────────────
