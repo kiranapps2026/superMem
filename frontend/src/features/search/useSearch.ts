@@ -14,9 +14,9 @@ export function useSearch(query: string, options?: { projectId?: string; limit?:
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ q: query.trim(), limit: String(options?.limit ?? 20) });
+      const params = new URLSearchParams({ query: query.trim(), limit: String(options?.limit ?? 20) });
       if (options?.projectId) params.set('project_id', options.projectId);
-      const data = await apiGet<SearchResponse>(`/api/v1/search/?${params}`);
+      const data = await apiPost<SearchResponse>(`/api/v1/ingest/search?${params}`, undefined);
       setResults(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');

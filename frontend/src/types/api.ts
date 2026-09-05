@@ -63,7 +63,8 @@ export interface MemorySearchRequest { query: string; memory_type?: string | nul
 
 export interface FactItem {
   id: string; workspace_id: string; project_id: string | null;
-  content: string; source_message_id: string | null;
+  content: string; source_id: string | null;
+  subject: string; predicate: string; object: string;
   temporal_status: string; confidence: number; authority: number;
   created_at: string; updated_at: string;
 }
@@ -72,7 +73,7 @@ export interface FactListResponse { items: FactItem[]; total: number; }
 export interface DecisionItem {
   id: string; workspace_id: string; project_id: string | null;
   content: string; temporal_status: string;
-  confidence: number; tags: string[];
+  confidence: number;
   created_at: string; updated_at: string;
 }
 export interface DecisionListResponse { items: DecisionItem[]; total: number; }
