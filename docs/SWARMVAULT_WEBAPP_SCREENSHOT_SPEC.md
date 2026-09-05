@@ -4,7 +4,7 @@
 **Date:** 2026-09-05
 **Application Version:** 0.1.0
 **Repository SHA:** d970d6b (master)
-**Documentation Status:** DRAFT — Screenshots not yet captured
+**Documentation Status:** COMPLETE — All 28 screenshots captured in `docs/screenshots/`
 **Author:** SwarmVault Documentation Authority
 
 ---
@@ -558,36 +558,37 @@ This document specifies exactly which screenshots to capture for the SwarmVault 
 
 ## Screenshot Checklist
 
-| # | Screen | Status | Captured | Notes |
-|---|--------|--------|----------|-------|
-| 1 | Landing Page | Needed | ☐ | Include testimonials and footer |
-| 2 | Registration | Needed | ☐ | Empty form state |
-| 3 | Dashboard Empty | Needed | ☐ | Before any projects |
-| 4 | Dashboard Populated | Needed | ☐ | With 2-3 projects |
-| 5 | Projects List | Needed | ☐ | |
-| 6 | Sidebar Expanded | Needed | ☐ | On a project page |
-| 7 | Sidebar Collapsed | Needed | ☐ | Icon-only mode |
-| 8 | Chat Empty | Needed | ☐ | No messages |
-| 9 | Chat Active | Needed | ☐ | With conversation |
-| 10 | Ingest Empty | Needed | ☐ | Upload form visible |
-| 11 | Ingest Populated | Needed | ☐ | With sources |
-| 12 | Memory | Needed | ☐ | With memory items |
-| 13 | Search | Needed | ☐ | With results |
-| 14 | Graph | Needed | ☐ | With nodes |
-| 15 | Timeline | Needed | ☐ | With events |
-| 16 | Facts | Needed | ☐ | With facts |
-| 17 | Decisions | Needed | ☐ | With decisions |
-| 18 | Sessions | Needed | ☐ | Session list |
-| 19 | Session Detail | Needed | ☐ | With messages |
-| 20 | Provenance | Needed | ☐ | With records |
-| 21 | API Keys | Needed | ☐ | Admin view |
-| 22 | Storage | Needed | ☐ | With files |
-| 23 | Settings Profile | Needed | ☐ | |
-| 24 | Settings Members | Needed | ☐ | |
-| 25 | Settings Invitations | Needed | ☐ | With pending |
-| 26 | Project Settings | Needed | ☐ | All tabs |
-| 27 | Evidence Modal | Needed | ☐ | Over chat |
-| 28 | Error States | Needed | ☐ | Various errors |
+| # | Screen | Status | Captured | File |
+|---|--------|--------|----------|------|
+| 1 | Landing Page | Done | ✅ | `01-landing.png` |
+| 2 | Registration | Done | ✅ | `02-register.png` |
+| 3 | Dashboard Empty | Done | ✅ | `03-dashboard-empty.png` |
+| 4 | Dashboard Populated | Done | ✅ | `04-dashboard-with-projects.png` |
+| 5 | Projects List | Done | ✅ | `05-projects-page.png` |
+| 6 | Sidebar Expanded | Done | ✅ | `06-sidebar-expanded.png` |
+| 7 | Sidebar Collapsed | Done | ✅ | `07-sidebar-collapsed.png` |
+| 8 | Chat Empty | Done | ✅ | `08-chat-empty.png` |
+| 9 | Chat Active | Done | ✅ | `09-chat-with-messages.png` |
+| 10 | Ingest Empty | Done | ✅ | `10-ingest-empty.png` |
+| 11 | Ingest Populated | Done | ✅ | `11-ingest-with-sources.png` |
+| 12 | Memory | Done | ✅ | `12-memory-page.png` |
+| 13 | Search | Done | ✅ | `13-search-page.png` |
+| 14 | Graph | Done | ✅ | `14-graph-page.png` |
+| 15 | Timeline | Done | ✅ | `15-timeline-page.png` |
+| 16 | Facts | Done | ✅ | `16-facts-page.png` |
+| 17 | Decisions | Done | ✅ | `17-decisions-page.png` |
+| 18 | Sessions | Done | ✅ | `18-sessions-page.png` |
+| 19 | Session Detail | Done | ✅ | `19-session-detail.png` |
+| 20 | Provenance | Done | ✅ | `20-provenance-page.png` |
+| 21 | API Keys | Done | ✅ | `21-api-keys.png` |
+| 22 | Storage | Done | ✅ | `22-storage.png` |
+| 23 | Settings Profile | Done | ✅ | `23-settings-profile.png` |
+| 24 | Settings Members | Done | ✅ | `24-settings-members.png` |
+| 25 | Settings Invitations | Done | ✅ | `25-settings-invitations.png` |
+| 26 | Project Settings | Done | ✅ | `26-project-settings.png` |
+| 27 | Evidence Modal | Done | ✅ | `27-evidence-modal.png` |
+| 28 | Error States | Done | ✅ | `28-error-states.png` |
 
-**Total screenshots needed: 28**
-**Captured: 0/28** (pending manual screenshot capture)
+**Total: 28/28 screenshots captured.**
+
+All screenshots captured on 2026-09-05 using Playwright (Chromium headless) at 1440x900 viewport.
