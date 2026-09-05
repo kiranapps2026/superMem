@@ -41,7 +41,7 @@ export default function SessionsPage() {
                 <MessageSquare size={16} className="text-gray-500" />
                 <div>
                   <p className="text-sm font-medium">{s.title || 'Untitled session'}</p>
-                  <p className="text-xs text-gray-500">{(metaFor(s) as any).source || 'chat'} &middot; {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}</p>
+                  <p className="text-xs text-gray-500">{String((metaFor(s) as Record<string, unknown> | undefined)?.['source'] || 'chat')} &middot; {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-gray-500" />
