@@ -3,14 +3,14 @@
 ## Phase 1R-C — Release Manifest
 
 **Date:** 2026-09-05
-**Baseline HEAD:** `2f81f83977093b3b8a8d4370c756a5d60861de5c`
+**Baseline HEAD:** `a12c227977093b3b8a8d4370c756a5d60861de5c`
 
 ---
 
 ## 1. Repository State
 
 ### Git Information
-- **HEAD:** `2f81f83`
+- **HEAD:** `a12c227`
 - **Branch:** `master`
 - **Working tree:** Clean (no uncommitted changes)
 
@@ -65,7 +65,7 @@
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| Gate 0 — SHA Immutability | ✅ | 2f81f83 confirmed, clean tree |
+| Gate 0 — SHA Immutability | ✅ | a12c227 confirmed, clean tree |
 | Gate 1 — Change History | ✅ | 5 commits since baseline, all reconciled |
 | Gate 2 — Endpoint Inventory | ✅ | 64 paths / 84 methods (97/85 discrepancy resolved) |
 | Gate 3 — Facts API | ✅ | Backend and frontend paths match |
@@ -95,7 +95,7 @@
 | Gate 27 — Detachability | ✅ | One env var required |
 | Gate 28 — Test Matrix | ✅ | All suites documented |
 | Gate 29 — Repeatability | ✅ | Isolated runs deterministic |
-| Gate 30 — Final SHA | ✅ | 2f81f83, clean tree |
+| Gate 30 — Final SHA | ✅ | a12c227, clean tree |
 
 ---
 

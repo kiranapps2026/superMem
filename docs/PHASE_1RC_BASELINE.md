@@ -3,7 +3,7 @@
 ## Phase 1R-C — Baseline
 
 **Date:** 2026-09-05
-**Final SHA:** `2f81f83`
+**Final SHA:** `a12c227`
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Property | Value |
 |---------|--------|
-| BACKEND_SHA | `2f81f83` |
-| FRONTEND_SHA | `2f81f83` (same repo) |
+| BACKEND_SHA | `a12c227` |
+| FRONTEND_SHA | `a12c227` (same repo) |
 | CURRENT_BRANCH | `master` |
 | API_CONTRACT_VERSION | Derived from OpenAPI at /openapi.json |
 | APPLICATION_VERSION | 0.1.0 |
@@ -23,7 +23,7 @@
 ## Git Log (last 5 commits)
 
 ```
-2f81f83 chore: update .gitignore for storage runtime data
+a12c227 chore: update .gitignore for storage runtime data
 d0bf109 chore: add .gitignore for build artifacts and test results
 bfc85d0 docs(phase-1rb): add baseline and endpoint coverage decision
 c02ee4c fix(frontend): remove 'as any' cast in sessions page, use proper typing
@@ -39,7 +39,7 @@ c02ee4c fix(frontend): remove 'as any' cast in sessions page, use proper typing
 - `c02ee4c` — Removed `as any` cast in sessions page, use proper typing
 - `26d47ca` — Fixed Facts/Decisions API paths in useIngest hook
 - `d0bf109` — Added .gitignore for build artifacts and test results
-- `2f81f83` — Updated .gitignore for storage runtime data
+- `a12c227` — Updated .gitignore for storage runtime data
 
 ### Phase 1RB Documentation (from prior phase)
 - `docs/PHASE_1RB_BASELINE.md`
@@ -116,4 +116,4 @@ c02ee4c fix(frontend): remove 'as any' cast in sessions page, use proper typing
 
 ## Baseline Freeze
 
-This baseline is frozen at SHA `2f81f83`. Any changes after this point require recertification.
+This baseline is frozen at SHA `a12c227`. Any changes after this point require recertification.

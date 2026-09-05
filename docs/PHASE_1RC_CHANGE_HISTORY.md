@@ -1,7 +1,7 @@
 # Phase 1RC — Change History Reconciliation
 
 **Date:** 2026-09-05
-**Reconciled From:** `0534efe` (Phase 1R baseline) to `2f81f83` (current HEAD)
+**Reconciled From:** `0534efe` (Phase 1R baseline) to `a12c227` (current HEAD)
 **Total Commits:** 7 (6 post-baseline + 1 baseline)
 **Interpreter:** Gate 1 Change History Reconciliation
 
@@ -376,7 +376,7 @@ Four new Phase 1RB certification documents:
 
 ---
 
-### Commit 7: `2f81f83` — chore: update .gitignore for storage runtime data
+### Commit 7: `a12c227` — chore: update .gitignore for storage runtime data
 
 **Date:** 2026-09-05  
 **Author:** Dev  
@@ -467,7 +467,7 @@ No database initialization changes in this range. The `app/main.py` `lifespan()`
 | `c02ee4c` | fix(frontend) | 1 (+1/-1) | - | ✅ | - | - | - | - |
 | `bfc85d0` | docs | 2 (new) | - | - | - | - | - | - |
 | `d0bf109` | chore+docs | 5 | - | - | - | - | - | - |
-| `2f81f83` | chore | 1 (+3) | - | - | - | - | - | - |
+| `a12c227` | chore | 1 (+3) | - | - | - | - | - | - |
 
 ---
 
@@ -483,7 +483,7 @@ No database initialization changes in this range. The `app/main.py` `lifespan()`
 
 5. **47 unused endpoints:** `PHASE_1RB_ENDPOINT_COVERAGE_DECISION.md` documents the decision, but the unused endpoints remain in the codebase. These should either be implemented, documented as intentional, or removed to reduce attack surface.
 
-6. **`storage/` directory:** The `2f81f83` commit re-adds `storage/` to `.gitignore`. This directory contains runtime data. The `.gitignore` had lost this entry in the `d0bf109` rewrite — any files that were staged but not committed during that window could have been accidentally committed if not caught.
+6. **`storage/` directory:** The `a12c227` commit re-adds `storage/` to `.gitignore`. This directory contains runtime data. The `.gitignore` had lost this entry in the `d0bf109` rewrite — any files that were staged but not committed during that window could have been accidentally committed if not caught.
 
 7. **`CERTIFICATION/` directory duplicates:** Both `0534efe` and `fff32b4` created certification documents. There are now `CERTIFICATION/PRODUCTION_CERTIFICATION.md` (from 0534efe) and `RELEASE_CERTIFICATION_FINAL.md` (from fff32b4) plus `docs/PHASE_1R_FINAL_CERTIFICATION.md`. These may contain overlapping or conflicting information.
 

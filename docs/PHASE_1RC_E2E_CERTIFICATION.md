@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `2f81f83`
+**Baseline:** `a12c227`
 
 ---
 
