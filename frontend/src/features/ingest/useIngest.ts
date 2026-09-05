@@ -39,7 +39,7 @@ export function useFacts(projectId: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<PaginatedResponse<FactItem>>(`/api/v1/facts/?project_id=${encodeURIComponent(projectId)}`);
+      const data = await apiGet<PaginatedResponse<FactItem>>(`/api/v1/ingest/facts?project_id=${encodeURIComponent(projectId)}`);
       setItems(data.items);
       setTotal(data.total);
     } catch (err) {
@@ -64,7 +64,7 @@ export function useDecisions(projectId: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<PaginatedResponse<DecisionItem>>(`/api/v1/decisions/?project_id=${encodeURIComponent(projectId)}`);
+      const data = await apiGet<PaginatedResponse<DecisionItem>>(`/api/v1/ingest/decisions?project_id=${encodeURIComponent(projectId)}`);
       setItems(data.items);
       setTotal(data.total);
     } catch (err) {
