@@ -106,4 +106,32 @@ adc4a96 docs(phase-1rb): update final SHA to 9b5a15b across all certification do
 ## Baseline Freeze
 
 This baseline is frozen at SHA `4aa908d5`. Phase 1R-B certification is complete.
-All 699 tests pass. **FRONTEND/BACKEND INTEGRATION CERTIFIED.**
+All 713 tests pass (671 unit + 42 E2E). **FRONTEND/BACKEND INTEGRATION CERTIFIED WITH LIMITATIONS.**
+
+### Key Corrections from Phase 1R
+| Claim (Phase 1R) | Verified (Phase 1R-B) | Correction |
+|------------------|----------------------|------------|
+| 97 endpoints | 81 endpoints | Counted from `@router.` decorators in source |
+| 50 frontend-consumed endpoints | 25 endpoint paths | Actual distinct paths in frontend code |
+| 686 unit tests | 671 unit tests | Remediation tests included in 671 |
+| FRONTEND/BACKEND INTEGRATION CERTIFIED | FRONTEND/BACKEND INTEGRATION CERTIFIED WITH LIMITATIONS | 9 broken consumers, 8 unimplemented APIs |
+
+### Code Fixes in Phase 1R-B
+| File | Fix |
+|------|-----|
+| `frontend/src/features/search/useSearch.ts` | `GET /api/v1/search/` (404) → `POST /api/v1/ingest/search` |
+| `frontend/src/types/api.ts` | `FactItem.source_message_id` → `source_id`, added `subject/predicate/object` |
+| `frontend/src/types/api.ts` | Removed non-existent `tags` from `DecisionItem` |
+
+### Broken Frontend Consumers (9 total)
+| # | Consumer | Issue |
+|---|----------|-------|
+| 1 | `useChat.ts` (useSSE.tsx) | EventSource (GET) vs POST endpoint |
+| 2 | `useGraph.ts` | Path `/api/v1/graph` → should be `/api/v1/ingest/graph` |
+| 3 | `search/page.tsx` | Uses GET instead of POST |
+| 4 | `facts/page.tsx` | Local `FactItem` with wrong fields |
+| 5 | `decisions/page.tsx` | Local `DecisionItem` with non-existent `tags` |
+| 6 | `useAuth.tsx` | Logout sends `{}` instead of `{refresh_token}` |
+| 7 | `useIngest.ts` jobs | Expects array, gets `{items, total}` |
+| 8 | `chat/page.tsx` | Missing `project_id`/`session_id` in chat body |
+| 9 | `useApiKeys.ts` | Field `prefix` vs backend `key_prefix` |
