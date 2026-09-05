@@ -1,12 +1,16 @@
 # PHASE_1RB_E2E_CERTIFICATION.md
 
-## Phase 1R-B — E2E Certification
+## Phase 1R-B — E2E Certification (Reconciled)
 
 **Date:** 2026-09-05
+**Reconciliation:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `4aa908d5`
-**Browser:** Chromium (Playwright)
+**Final SHA:** `4aa908d5`
+**Baseline:** `fff32b4` (Phase 1R-B)
+**Browser:** Chromium (Playwright 1.63.0)
 **Workers:** 1 (sequential, required for DB consistency)
+**Backend URL:** http://localhost:8000
+**Frontend URL:** http://localhost:3000
 
 ---
 

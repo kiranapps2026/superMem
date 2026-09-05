@@ -3,10 +3,10 @@
 ## Phase 1R-B — Release Manifest
 
 **Date:** 2026-09-05
+**Reconciliation:** 2026-09-05 (commit aa75470d)
 **Certifier:** Claude (automated)
 **Final SHA:** `4aa908d5`
 **Branch:** master
-**Last Updated:** Phase 1R-B Reconciliation (commit 3576592)
 
 ---
 

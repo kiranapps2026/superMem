@@ -1,152 +1,363 @@
 # FRONTEND_RUNTIME_CONSUMPTION_MATRIX.md
 
-## Phase 2 — Frontend API Consumption Audit
+## Phase 1R-B — Frontend Consumer Audit
 
 **Date:** 2026-09-05
-**Method:** Static analysis of every `apiGet`/`apiPost`/`apiPatch`/`apiDelete`/`uploadFile`/`streamChat`/`fetch` call in frontend source
+**Auditor:** Claude (automated)
+**Final SHA:** `4aa908d5`
+
+This document maps every frontend consumer (page, hook, component) to its backend API endpoint(s) and classifies the health of each consumer.
 
 ---
 
-## Summary
+## Legend
 
-| Category | Count |
-|----------|-------|
-| Frontend API consumers (hooks + pages) | 8 hooks, 4 pages |
-| API endpoint invocations | 25 distinct endpoint paths |
-| Broken consumers | **2** |
-| Type mismatches (fixed) | 3 (already patched) |
-| Unused types | Several |
-| Working consumers | 23 |
+| Symbol | Meaning |
+|--------|---------|
+| ✅ | Consumer works correctly at runtime |
+| ⚠️ | Consumer has a defect but has a workaround |
+| ❌ | Consumer is broken with no working path |
 
 ---
 
-## Hook-by-Hook Analysis
+## 1. Authentication (`hooks/useAuth.tsx`)
 
-### 1. `useAuth` (`hooks/useAuth.tsx`)
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| login | POST | /auth/login | ✅ | — |
+| register | POST | /auth/register | ✅ | — |
+| me (on mount) | GET | /auth/me | ✅ | — |
+| logout | POST | /auth/logout | ⚠️ | Sends `{}` instead of `{refresh_token}`. Server-side revocation fails. Client clears localStorage correctly. |
+| change-password | POST | /auth/change-password | ✅ | — |
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/auth/me')` | GET | `/auth/me` | None | — | `UserOut` | inline `{id,email,name,workspace_id,tenant_id}` | ✅ Match |
-| `apiPost('/api/v1/auth/login', {email,password})` | POST | `/auth/login` | `UserLogin` | `{email,password}` | `TokenResponse` | `TokenPair` | ⚠️ Mismatch: `TokenResponse` has `access_token,refresh_token,token_type,expires_in` — no `user` field. TS type `TokenPair` includes `user` which backend doesn't return. Register response is the one that includes user data. |
-| `apiPost('/api/v1/auth/register', data)` | POST | `/auth/register` | `UserRegister` | `{email,password,name,workspace_name}` | `TokenResponse` | `TokenPair & {user: UserInfo}` | ⚠️ Same issue — `TokenPair` has `user` field that doesn't exist in `TokenResponse` |
-| `apiPost('/api/v1/auth/logout', {})` | POST | `/auth/logout` | `RefreshRequest` | `{refresh_token}` | `{"detail": "Logged out"}` | (none) | ⚠️ Sends empty body but backend requires `refresh_token`. Logout will 422. |
-
-**Verdict:** P2 — logout sends empty body instead of refresh_token. Login/register types include `user` field that backend doesn't return.
-
----
-
-### 2. `useProjects` (`features/projects/useProjects.ts`)
-
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/projects/')` | GET | `/projects/` | None | — | `list[ProjectOut]` | `Project[]` | ✅ Match |
-| `apiGet('/api/v1/projects/${id}')` | GET | `/projects/{id}` | path param | — | `ProjectOut` | `Project` | ✅ Match |
-| `apiPost('/api/v1/projects/', data)` | POST | `/projects/` | `ProjectCreate` | `{name,description}` | `ProjectOut` | `Project` | ✅ Match |
-| `apiPatch('/api/v1/projects/${id}', data)` | PATCH | `/projects/{id}` | `ProjectUpdate` | `{name?,description?}` | `ProjectOut` | `Project` | ✅ Match |
-| `apiDelete('/api/v1/projects/${id}')` | DELETE | `/projects/{id}` | None | — | None (204) | (none) | ✅ Match |
-
-**Verdict:** All correct.
+**Defects:** 1 (P2)
 
 ---
 
-### 3. `useChat` (`features/chat/useChat.ts`)
+## 2. Projects (`features/projects/useProjects.ts`)
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `EventSource('/api/v1/chat/stream?project_id=...')` | **GET** (EventSource) | `/chat/stream` | Query param only | **Requires POST body** | SSE stream | `ChatStreamEvent` | ❌ **BROKEN** — `EventSource` cannot send POST body or Authorization header. Backend requires POST with `{message, session_id?, project_id?}`. |
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list | GET | /projects/ | ✅ | — |
+| get | GET | /projects/{id} | ✅ | — |
+| create | POST | /projects/ | ✅ | — |
+| update | PATCH | /projects/{id} | ✅ | — |
+| delete | DELETE | /projects/{id} | ✅ | — |
 
-**Verdict:** ❌ CRITICAL — Chat streaming is completely broken in the `useChat` hook. The `chat/page.tsx` works because it uses `fetch` directly with POST + ReadableStream.
-
----
-
-### 4. `chat/page.tsx` (direct implementation)
-
-| Call | Method | Endpoint | Request | Backend Schema | Response | Status |
-|------|--------|----------|---------|----------------|----------|--------|
-| `fetch('/api/v1/chat/stream', {method:'POST', body:JSON.stringify({message})})` | POST | `/chat/stream` | `{message}` — missing `session_id`, `project_id` | `ChatRequest` (message, session_id?, project_id?) | SSE stream via ReadableStream | ⚠️ Works but missing `project_id` and `session_id` in request body |
-
-**Verdict:** Works for basic chat. Missing `project_id` and `session_id` means memory context is scoped to user-level instead of project-level.
+**Defects:** 0
 
 ---
 
-### 5. `useMemory` (`features/memory/useMemory.ts`)
+## 3. Chat Streaming — Two Implementations
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/memory/')` | GET | `/memory/` | q: memory_type?, project_id?, limit, offset | — | `list[MemoryOut]` | `MemoryItemOut[]` | ✅ Match |
-| `apiPost('/api/v1/memory/', data)` | POST | `/memory/` | `{project_id, memory_type, content, confidence?, extra_metadata?}` | `MemoryCreate` (memory_type, content, scope, agent_id?, run_id?, project_id?, extra_metadata?) | `MemoryOut` | `MemoryItemOut` | ✅ Match |
-| `apiPost('/api/v1/memory/search', body)` | POST | `/memory/search` | `{query, memory_type?, project_id?, limit?}` | `MemorySearchRequest` | `list[MemoryOut]` | `MemoryItemOut[]` | ✅ Match |
-| `apiDelete('/api/v1/memory/${id}')` | DELETE | `/memory/{id}` | — | — | None (204) | (none) | ✅ Match |
+### 3a. `chat/page.tsx` (CORRECT)
 
-**Verdict:** All correct.
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| stream | POST | /chat/stream | ✅ | Uses `fetch()` + `ReadableStream`. Sends POST body `{message}` and `Authorization: Bearer` header. |
 
----
+### 3b. `useSSE.tsx` + `useChat.ts` (BROKEN)
 
-### 6. `useSearch` (`features/search/useSearch.ts`)
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| stream | GET (EventSource) | /chat/stream | ❌ | `EventSource` is GET-only. Cannot send POST body or auth headers. Backend requires POST. |
+| (inherited) | — | — | ❌ | `useChat.ts` imports `useSSE`. Both are broken. No component currently uses `useChat`. |
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiPost('/api/v1/ingest/search?query=...&limit=...')` | POST | `/ingest/search` | Query params: `query`, `limit`, `project_id?` — sends empty body (`undefined`) | **Requires `query` as query param, optional `limit`** | `SearchResponse` | `SearchResponse` | ✅ Match (fixed) |
-
-**Verdict:** Correct after fix. Note: endpoint is unusual — POST method with query params (not body).
+**Defects:** 2 (P0)
 
 ---
 
-### 7. `useGraph` (`features/graph/useGraph.ts`)
+## 4. Memory (`features/memory/useMemory.ts`)
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/graph?project_id=...')` | GET | **WRONG PATH** — `/api/v1/graph` | q: project_id | **Correct endpoint is `/api/v1/ingest/graph`** | `GraphResponse` | `GraphResponse` | ❌ **BROKEN** — 404, endpoint doesn't exist at this path |
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list | GET | /memory/ | ✅ | — |
+| search | POST | /memory/search | ✅ | — |
+| create | POST | /memory/ | ✅ | — |
+| delete | DELETE | /memory/{id} | ✅ | — |
 
-**Verdict:** ❌ CRITICAL — Graph page is completely non-functional. Path must be `/api/v1/ingest/graph`.
-
----
-
-### 8. `useIngest` (`features/ingest/useIngest.ts`)
-
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/ingest/sources?project_id=...')` | GET | `/ingest/sources` | q: project_id, status?, limit, offset | — | `SourceListResponse` | `SourceListResponse` | ✅ Match |
-| `apiGet('/api/v1/ingest/facts?project_id=...')` | GET | `/ingest/facts` | q: project_id, subject?, temporal_status?, limit, offset | — | `FactListResponse` | `PaginatedResponse<FactItem>` | ✅ Match |
-| `apiGet('/api/v1/ingest/decisions?project_id=...')` | GET | `/ingest/decisions` | q: project_id, temporal_status?, limit, offset | — | `DecisionListResponse` | `PaginatedResponse<DecisionItem>` | ✅ Match |
-| `apiGet('/api/v1/ingest/jobs')` | GET | `/ingest/jobs` | q: limit, offset | — | `{items[], total}` | `IngestJobOut[]` | ❌ **TYPE MISMATCH** — Backend returns `{items[], total}` but TS type is `IngestJobOut[]` (array, not object) |
-| `uploadFile(projectId, file)` | POST (multipart) | `/ingest/upload` | FormData: project_id, source_type, file | multipart | `IngestUploadResponse` | (returns `{source_id, status}` via callback) | ✅ Match |
-
-**Verdict:** `useIngestJobs` has a type mismatch — expects array, backend returns paginated object. 3 other consumers correct.
+**Defects:** 0
 
 ---
 
-### 9. `useApiKeys` (`features/apiKeys/useApiKeys.ts`)
+## 5. Search
 
-| Call | Method | Endpoint | Request | Backend Schema | Response | TS Type | Status |
-|------|--------|----------|---------|----------------|----------|---------|--------|
-| `apiGet('/api/v1/api-keys')` | GET | `/api-keys/` | — | — | `list[ApiKeyOut]` | `ApiKeyOut[]` | ⚠️ **FIELD MISMATCH** — Backend `ApiKeyOut` has `key_prefix`; TS interface has `prefix` |
-| `apiPost('/api/v1/api-keys', {name})` | POST | `/api-keys/` | `{name}` | `ApiKeyCreate` (name, description?, expires_at?, metadata?) | `ApiKeyCreateResponse` (with `raw_key`) | `ApiKeyOut & {raw_key}` | ⚠️ Same field name mismatch + missing fields (description, expires_at, key_extra) |
-| `apiDelete('/api/v1/api-keys/${id}')` | DELETE | `/api-keys/{id}` | — | — | None (204) | (none) | ✅ Match |
-| `apiPost('/api/v1/api-keys/${id}/rotate', {})` | POST | `/api-keys/{id}/rotate` | Empty body | — | `ApiKeyRotateResponse` | `ApiKeyOut & {raw_key}` | ⚠️ Field name mismatch |
+### 5a. `features/search/useSearch.ts`
 
-**Verdict:** Non-breaking — `prefix` vs `key_prefix` causes UI to show `undefined` for the prefix display field.
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| search | POST | /ingest/search | ✅ | — |
 
----
+### 5b. `search/page.tsx`
 
-## Broken Consumers Summary
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| search | GET (direct fetch) | /ingest/search | ✅ | Uses `fetch()` directly with query params. Works. (Note: does NOT use `useSearch` hook.) |
 
-| # | Consumer | Endpoint Called | Correct Endpoint | Impact |
-|---|----------|---------------|-----------------|--------|
-| 1 | `useChat.ts` (EventSource) | GET `/api/v1/chat/stream` | POST `/api/v1/chat/stream` | **Chat streaming broken in useChat hook** |
-| 2 | `useGraph.ts` | GET `/api/v1/graph` | GET `/api/v1/ingest/graph` | **Graph page returns 404** |
-| 3 | `useAuth.tsx` logout | POST `/auth/logout` with `{}` | Needs `{refresh_token}` | **Logout fails silently** |
-| 4 | `useIngest.ts` jobs | Expects `IngestJobOut[]` | Returns `{items[], total}` | **Jobs list will crash on `.map()`** |
-| 5 | `useApiKeys.ts` | Field `prefix` | Field `key_prefix` | **Key prefix shows undefined** |
-| 6 | `chat/page.tsx` | POST with `{message}` only | Needs `{message, project_id?, session_id?}` | **Missing project context in chat** |
+**Defects:** 0
 
 ---
 
-## Type Mismatches Fixed (Phase 1R-B)
+## 6. Graph
 
-| # | File | Issue | Fix Applied |
-|---|------|-------|-------------|
-| 1 | `useSearch.ts` | Called `/api/v1/search/` (404) | Fixed to `/api/v1/ingest/search` |
-| 2 | `types/api.ts` | `FactItem.source_message_id` | Renamed to `source_id` |
-| 3 | `types/api.ts` | `FactItem` missing `subject/predicate/object` | Added fields |
-| 4 | `types/api.ts` | `DecisionItem.tags` non-existent | Removed field |
+### 6a. `features/graph/useGraph.ts`
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| load | GET | /graph | ❌ | Wrong path. Backend has it at `/ingest/graph`. Returns 404. |
+
+### 6b. `graph/page.tsx`
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| load | GET | /ingest/graph | ✅ | Calls correct path directly. |
+
+**Defects:** 1 (P1)
+
+---
+
+## 7. Ingest (`features/ingest/useIngest.ts`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| sources | GET | /ingest/sources | ✅ | — |
+| facts | GET | /ingest/facts | ✅ | — |
+| decisions | GET | /ingest/decisions | ✅ | — |
+| upload (file) | POST | /ingest/upload | ✅ | — |
+| upload (text) | POST | /ingest/upload | ✅ | — |
+| jobs | GET | /ingest/jobs | ⚠️ | Expects `IngestJobOut[]` (array). Backend returns `{items, total}` (paginated). No page renders this. |
+
+**Defects:** 1 (P1 — latent)
+
+---
+
+## 8. API Keys (`features/apiKeys/useApiKeys.ts`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list | GET | /api-keys | ✅ | — |
+| create | POST | /api-keys | ✅ | — |
+| revoke | DELETE | /api-keys/{id} | ✅ | — |
+| rotate | POST | /api-keys/{id}/rotate | ✅ | — |
+
+**Type Issue:** `ApiKeyOut` has `prefix` field, backend returns `key_prefix`. Display masks with `undefined••••••`.
+
+**Defects:** 1 (P2 — cosmetic)
+
+---
+
+## 9. Facts Page (`projects/[id]/facts/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| load | GET | /ingest/facts | ⚠️ | Works (data returned). Local `FactItem` type has `statement` (backend uses `content`), `authority` as string (backend number). Content renders blank. |
+
+**Defects:** 1 (P2)
+
+---
+
+## 10. Decisions Page (`projects/[id]/decisions/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| load | GET | /ingest/decisions | ⚠️ | Works (data returned). Local `DecisionItem` has `tags: string[]` (doesn't exist in backend). Tags never render. |
+
+**Defects:** 1 (P2)
+
+---
+
+## 11. Timeline (`projects/[id]/timeline/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| load | GET | /ingest/timeline | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 12. Sessions (`projects/[id]/sessions/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list | GET | /sessions | ✅ | — |
+
+### Session Detail (`projects/[id]/sessions/[sessionId]/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| history | GET | /sessions/{id}/history | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 13. Provenance (`projects/[id]/provenance/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list | GET | /provenance/ | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 14. Memory Page (`projects/[id]/memory/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| list (filtered) | GET | /memory/ | ✅ | — |
+| list (all) | GET | /memory/ | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 15. Ingest Page (`projects/[id]/ingest/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| sources | GET | /ingest/sources | ✅ | — |
+| upload (file) | POST | /ingest/upload | ✅ | — |
+| upload (text) | POST | /ingest/upload | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 16. Dashboard (`dashboard/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| workspace | GET | /workspace | ✅ | — |
+| projects | GET | /projects/ | ✅ | — |
+| create project | POST | /projects/ | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 17. Settings — Workspace (`settings/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| workspace | GET | /workspace | ✅ | — |
+| update workspace | PATCH | /workspace | ✅ | — |
+| members | GET | /workspace/members | ✅ | — |
+| invite member | POST | /workspace/members | ✅ | — |
+| update member | PATCH | /workspace/members/{id} | ✅ | — |
+| remove member | DELETE | /workspace/members/{id} | ✅ | — |
+| invitations | GET | /workspace/members/invitations | ✅ | — |
+| revoke invitation | DELETE | /workspace/members/invitation/{id} | ✅ | — |
+| change-password | POST | /auth/change-password | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 18. Settings — Project (`projects/[id]/settings/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| project (via hook) | GET | /projects/{id} | ✅ | — |
+| update project | PATCH | /projects/{id} | ✅ | — |
+| delete project | DELETE | /projects/{id} | ✅ | — |
+| members | GET | /workspace/members | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 19. Settings — Profile (`settings/profile/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| update profile | PATCH | /auth/me | ✅ | — |
+| change-password | POST | /auth/change-password | ✅ | — |
+
+**Defects:** 0
+
+---
+
+## 20. Settings — API Keys (`settings/api-keys/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| (via useApiKeys hook) | — | — | ⚠️ | Same field name issue as #8 (`prefix` vs `key_prefix`) |
+
+**Defects:** 1 (P2 — cosmetic)
+
+---
+
+## 21. Settings — Storage (`settings/storage/page.tsx`)
+
+| API Call | Method | Endpoint | Status | Issue |
+|----------|--------|----------|--------|-------|
+| me (for workspace_id) | GET | /auth/me | ✅ | — |
+| upload (via `uploadFile`) | POST | /storage/upload | ✅ | — |
+| delete | (client-side only) | — | ⚠️ | No backend delete for raw uploads. Removes from UI list only. |
+
+**Defects:** 1 (P3 — feature gap)
+
+---
+
+## 22. Sidebar (`components/Sidebar.tsx`)
+
+No API calls. Pure navigation component. Uses `useAuth` for user state and logout.
+
+**Defects:** 0
+
+---
+
+## Summary Matrix
+
+| Feature | Consumers | Defects | Severity |
+|---------|-----------|---------|----------|
+| Auth | 1 hook | 1 | P2 (logout body) |
+| Projects | 1 hook + 2 pages | 0 | — |
+| Chat (page) | 1 page | 0 | ✅ Works |
+| Chat (hook) | 1 hook + useSSE | 2 | P0 (EventSource) |
+| Memory | 1 hook + 1 page | 0 | — |
+| Search | 1 hook + 1 page | 0 | ✅ Both work |
+| Graph (hook) | 1 hook | 1 | P1 (wrong path) |
+| Graph (page) | 1 page | 0 | ✅ Works |
+| Ingest | 1 hook + 1 page | 1 | P1 (jobs type) |
+| Facts | 1 page | 1 | P2 (type mismatch) |
+| Decisions | 1 page | 1 | P2 (tags field) |
+| Timeline | 1 page | 0 | — |
+| Sessions | 2 pages | 0 | — |
+| Provenance | 1 page | 0 | — |
+| Dashboard | 1 page | 0 | — |
+| Settings | 4 pages | 0 | — |
+| API Keys | 1 hook + 1 page | 1 | P2 (field name) |
+| Storage | 1 page | 1 | P3 (no delete) |
+| Sidebar | 1 component | 0 | — |
+| **TOTAL** | | **9** | 2 P0, 2 P1, 4 P2, 1 P3 |
+
+---
+
+## Runtime Status by Page
+
+| Page Route | Status | Notes |
+|------------|--------|-------|
+| /auth/login | ✅ | Register, login, password change all work |
+| /auth/register | ✅ | — |
+| /dashboard | ✅ | Workspace + projects load correctly |
+| /projects | ✅ | Project CRUD works |
+| /projects/{id}/chat | ✅ | Streaming works (uses direct fetch) |
+| /projects/{id}/ingest | ✅ | Upload + source list works |
+| /projects/{id}/memory | ✅ | Memory list + filter works |
+| /projects/{id}/facts | ⚠️ | Data loads but content renders blank (type mismatch) |
+| /projects/{id}/decisions | ⚠️ | Data loads but tags never show (non-existent field) |
+| /projects/{id}/timeline | ✅ | — |
+| /projects/{id}/search | ✅ | Works (uses direct fetch) |
+| /projects/{id}/graph | ✅ | Works (uses correct path) |
+| /projects/{id}/sessions | ✅ | — |
+| /projects/{id}/sessions/{id} | ✅ | — |
+| /projects/{id}/provenance | ✅ | — |
+| /projects/{id}/settings | ✅ | — |
+| /settings | ✅ | Workspace, members, invitations all work |
+| /settings/profile | ✅ | — |
+| /settings/api-keys | ⚠️ | Keys display with masked prefix showing `undefined` |
+| /settings/storage | ⚠️ | Upload works, delete is UI-only |
+| / | ✅ | Redirects correctly |
