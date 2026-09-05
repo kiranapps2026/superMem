@@ -3,7 +3,7 @@
 ## Gate 0 — Source Immutability & Baseline
 
 **Date:** 2026-09-05
-**Final SHA:** `1bc4a00`
+**Final SHA:** `d970d6b`
 
 ---
 
@@ -11,23 +11,23 @@
 
 | Property | Value |
 |---------|--------|
-| BACKEND_SHA | `1bc4a00` |
-| FRONTEND_SHA | `1bc4a00` (same repo) |
+| BACKEND_SHA | `d970d6b` |
+| FRONTEND_SHA | `d970d6b` (same repo) |
 | CURRENT_BRANCH | `master` |
 | API_CONTRACT_VERSION | 1.0 (frozen) |
 | APPLICATION_VERSION | 0.1.0 |
-| PARENT_COMMIT | `98e49f4` (Phase 1R-B test fixes) |
+| PARENT_COMMIT | `1bc4a00` (Phase 1R-B deliverables) |
 
 ---
 
 ## Git Log (last 5 commits)
 
 ```
+d970d6b docs(phase-1rb): complete Phase 1R-B certification deliverables (6 docs)
 1bc4a00 test(e2e): add X-E2E bypass header for rate limiting in test runs
 98e49f4 test(e2e): fix golden-journey + frontend-journey (Node.js fetch, UUID isolation)
 d23a40b fix(backend): increase DB connection pool to 20 for E2E stability
 04f6df1 fix(e2e): resolve 9 failing golden-journey tests (JSON body encoding + assertion)
-39ce4b4 docs(phase-1rc): complete Phase 1R-C integration certification
 ```
 
 ---

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Final SHA:** `1bc4a00`
+**Final SHA:** `d970d6b`
 **Branch:** master
 
 ---

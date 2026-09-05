@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `1bc4a00`
+**Baseline:** `d970d6b`
 **Browser:** Chromium (Playwright)
 **Workers:** 1 (sequential, required for DB consistency)
 
