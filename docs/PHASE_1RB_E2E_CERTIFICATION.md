@@ -4,89 +4,80 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `c02ee4c`
+**Baseline:** `1bc4a00`
+**Browser:** Chromium (Playwright)
+**Workers:** 1 (sequential, required for DB consistency)
 
 ---
 
-## E2E Test Results
+## Test Suite Summary
 
-### API E2E Tests (golden-journey.spec.ts)
+| Suite | File | Tests | Pass | Fail | Status |
+|-------|------|-------|------|------|--------|
+| Auth Pages | auth.spec.ts | 7 | 7 | 0 | ✅ |
+| Dashboard | dashboard.spec.ts | 3 | 3 | 0 | ✅ |
+| Frontend UI Journey | frontend-journey.spec.ts | 4 | 4 | 0 | ✅ |
+| Golden Journey (API) | golden-journey.spec.ts | 14 | 14 | 0 | ✅ |
+| **Total UI E2E** | | **28** | **28** | **0** | **✅** |
 
-| Test | Status | Duration |
-|------|--------|----------|
-| Golden Journey (register→login→project→upload→ingest→search→chat→evidence→provenance) | ✅ PASS | 2.9s |
-| Authentication: register creates new user | ✅ PASS | 347ms |
-| Authentication: login returns tokens | ✅ PASS | 685ms |
-| Authentication: login rejects wrong password | ✅ PASS | 665ms |
-| Authentication: protected endpoint rejects missing token | ✅ PASS | 6ms |
-| Tenant Isolation: tenant A and B are isolated | ✅ PASS | 1.4s |
-| Connectors: ChatGPT connector normalizes correctly | ✅ PASS | 746ms |
-| Connectors: Claude connector normalizes correctly | ✅ PASS | 715ms |
-| Connectors: JSONL connector normalizes correctly | ✅ PASS | 733ms |
-| Security: malicious content stored as data only | ✅ PASS | 727ms |
-| Error Handling: malformed JSON returns 422 | ✅ PASS | 8ms |
-| Error Handling: nonexistent endpoint returns 404 | ✅ PASS | 6ms |
-| Health: liveness returns alive | ✅ PASS | 15ms |
-| Health: readiness returns ready | ✅ PASS | 9ms |
+---
 
-**Result: 14/14 PASS**
+## Per-Test Evidence
 
-### UI E2E Tests
+### auth.spec.ts (7/7 PASS)
+1. login page renders with form elements ✅
+2. register page link is accessible ✅
+3. login with invalid credentials shows error ✅
+4. login with empty fields validates ✅
+5. register page renders ✅
+6. register with mismatched passwords shows error ✅
+7. login link on register page works ✅
 
-#### Auth Tests (auth.spec.ts)
+### dashboard.spec.ts (3/3 PASS)
+1. unauthenticated access redirects to login ✅
+2. Projects page unauthenticated access redirects ✅
+3. Settings page unauthenticated access redirects ✅
 
-| Test | Status | Duration |
-|------|--------|----------|
-| Login page renders with form elements | ✅ PASS | 2.0s |
-| Register page link is accessible | ✅ PASS | 2.0s |
-| Login with invalid credentials shows error | ✅ PASS | 1.9s |
-| Login with empty fields validates | ✅ PASS | 2.1s |
-| Register page renders | ✅ PASS | 1.9s |
-| Register with mismatched passwords shows error | ✅ PASS | 2.0s |
-| Login link on register page works | ✅ PASS | 2.0s |
+### frontend-journey.spec.ts (4/4 PASS)
+1. full journey: dashboard → create project → navigate pages ✅
+2. sidebar navigation is present and links work ✅
+3. logout redirects to login ✅
+4. unauthenticated access redirects to login ✅
 
-**Result: 7/7 PASS**
+### golden-journey.spec.ts (14/14 PASS)
+1. register → login → workspace → project → upload → ingestion → search → chat → evidence → provenance ✅
+2. register creates new user ✅
+3. login returns tokens ✅
+4. login rejects wrong password ✅
+5. protected endpoint rejects missing token ✅
+6. tenant A and B are isolated ✅
+7. ChatGPT connector normalizes correctly ✅
+8. Claude connector normalizes correctly ✅
+9. JSONL connector normalizes correctly ✅
+10. malicious content stored as data, not executed ✅
+11. malformed JSON returns 422 ✅
+12. nonexistent endpoint returns 404 ✅
+13. liveness ✅
+14. readiness ✅
 
-#### Dashboard Tests (dashboard.spec.ts)
+---
 
-| Test | Status | Duration |
-|------|--------|----------|
-| Unauthenticated dashboard access redirects to login | ✅ PASS | 1.9s |
-| Unauthenticated projects access redirects to login | ✅ PASS | 2.0s |
-| Unauthenticated settings access redirects to login | ✅ PASS | 1.9s |
+## Known Issues
 
-**Result: 3/3 PASS**
-
-#### Frontend Journey Tests (frontend-journey.spec.ts)
-
-| Test | Status | Duration |
-|------|--------|----------|
-| Full journey: dashboard → create project → navigate pages | ✅ PASS | 4.9s |
-| Sidebar navigation is present and links work | ✅ PASS | 4.4s |
-| Logout redirects to login | ✅ PASS | 2.6s |
-| Unauthenticated access redirects to login | ✅ PASS | 1.7s |
-
-**Result: 4/4 PASS**
-
-### Combined Suite Behavior
-
-When all E2E spec files run together with shared database state, some tests fail due to database pollution (unique constraint violations from parallel user registration). This is a **test isolation limitation**, not a product bug. Each suite passes independently.
-
-**Recommendation:** For CI/CD, run E2E suites with isolated databases or sequentially with database reset between suites.
-
-### Test Coverage Summary
-
-| Tier | Count | Status |
-|------|-------|--------|
-| API E2E (golden-journey) | 14 | ✅ 14/14 PASS |
-| UI E2E (auth) | 7 | ✅ 7/7 PASS |
-| UI E2E (dashboard) | 3 | ✅ 3/3 PASS |
-| UI E2E (frontend-journey) | 4 | ✅ 4/4 PASS |
-| **Total E2E** | **28** | **✅ 28/28 PASS** |
+- **Rate limiting in combined runs:** When running auth.spec + dashboard + frontend-journey + golden-journey together, the X-E2E header is required to bypass rate limits. Without it, connector tests fail with 429 after 20 preceding API calls.
+- **UV_HANDLE_CLOSING warnings:** Windows-specific libuv assertion in Playwright. Does not affect test results. Cosmetic only.
 
 ---
 
 ## Certification
 
-> All E2E test suites **PASS** when run in isolation.
-> Combined execution has known database isolation limitations (documented, non-blocking).
+> E2E certification is **PASS**.
+> All 28 Playwright tests pass against backend at SHA `1bc4a00`.
+
+---
+**Signatures:**
+
+| Role | Approver | Date |
+|------|----------|------|
+| QA Automation | Claude | 2026-09-05 |
+| E2E Lead | — | — |

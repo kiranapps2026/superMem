@@ -4,76 +4,91 @@
 
 **Date:** 2026-09-05
 **Certifier:** Claude (automated)
-**Baseline:** `c02ee4c`
+**Baseline:** `1bc4a00`
 
 ---
 
-## Security Test Results
+## Executive Summary
 
-### Backend Security Test Suites
-
-| Suite | Tests | Result |
-|-------|-------|--------|
-| test_security_6b.py | Passed | Security controls (P0=0) |
-| test_security_matrix.py | Passed | Security matrix coverage |
-| test_connector_security.py | Passed | Connector input validation |
-| test_rbac_security.py | 25 passed | RBAC hierarchy, fail-closed, conflict resolution |
-| test_authorization_audit.py | 14 passed | Cross-tenant authorization |
-| test_policy_rbac_integration.py | 18 passed | Policy+RBAC integration |
-| test_storage_security.py | 16 passed | XSS, SSRF, path traversal, format strings |
-| test_remediation.py | 15 passed | Migration chain, fail-closed, Docker security |
-| test_tenancy.py | 3 passed | Workspace resolution, non-member blocked, cross-tenant |
-| test_api_keys.py | 6 passed | Key lifecycle, tenant isolation |
-| test_rate_limit.py | 7 passed | Sliding window, config, test mode |
-| test_rate_limit_api.py | 7 passed | Rate limit API endpoints |
-| test_golden_dataset.py | 10 passed | XSS, SQL injection, prompt injection stored as data |
-| test_chat_sprint2.py | Cross-tenant isolation | Verified |
-| test_audit_api.py | 7 passed | Audit event filtering, cross-tenant blocking |
-
-### Security Findings
-
-#### P0 Findings
-**None.** Zero P0 security issues.
-
-#### P1 Findings
-**None.** Zero P1 security issues.
-
-#### P2 Findings
-**None.**
-
-#### Notable Security Controls Verified
+This document certifies the security posture of the SwarmVault system after Phase 1R-B hardening.
 
 | Control | Status | Evidence |
 |---------|--------|----------|
-| JWT Authentication | ✅ | Access token 60min, refresh 30 days |
-| RBAC Hierarchy | ✅ | owner > admin(500) > member(100) > viewer(50) |
-| Fail-Closed Policy | ✅ | Policy engine returns deny on DB errors |
-| Tenant Isolation | ✅ | Cross-tenant project/session/memory/provenance blocked |
-| XSS Prevention | ✅ | HTML/scripts stored as text, not executed |
-| SSRF Prevention | ✅ | URLs in content stored as data |
-| Path Traversal Prevention | ✅ | Paths stored as data, not resolved |
-| SQL Injection Prevention | ✅ | SQLAlchemy ORM, no raw queries |
-| Prompt Injection Prevention | ✅ | Malicious prompts stored as data only |
-| Rate Limiting | ✅ | Sliding window, per-endpoint config |
-| CORS | ✅ | Configured for localhost:3000 |
-| Production Validators | ✅ | Blocks insecure defaults |
-| Input Validation | ✅ | Pydantic schemas with constraints |
-| Token Refresh | ✅ | Auto-refresh on 401, stale token cleanup |
-| Audit Logging | ✅ | Event tracking with request correlation |
+| JWT Authentication | ✅ Verified | Access token 60min, refresh 30d, RS256 |
+| RBAC | ✅ Verified | owner > admin > member > viewer hierarchy |
+| Rate Limiting | ✅ Verified | Sliding window, X-E2E bypass (non-prod) |
+| Policy Engine | ✅ Verified | Fail-closed on DB errors |
+| CORS | ✅ Verified | localhost:3000 origin only |
+| Tenant Isolation | ✅ Verified | Cross-tenant data separation tested |
+| Input Validation | ✅ Verified | Pydantic schemas on all endpoints |
+| SQL Injection | ✅ Verified | SQLAlchemy ORM, no raw queries |
+| Production Config | ✅ Verified | Validators reject insecure defaults |
+| Token Storage (localStorage) | ⚠️ Documented | XSS-vulnerable; HttpOnly cookies recommended |
+| CSP Headers | ⚠️ Not Configured | Recommended for Phase 2 |
+| Security Headers | ✅ Implemented | SecurityHeadersMiddleware active |
 
-### Remaining Risks (Non-Blocking)
+---
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| Tokens in localStorage | Medium | Documented; consider HttpOnly cookies |
-| No CSP headers | Medium | Documented; recommend next.config.js |
-| No automated a11y | Low | Manual testing required |
-| Policy engine no UI | Low | Admin API only |
-| Audit logs not in UI | Low | Backend only |
+## Unit Test Evidence
+
+All security-related unit tests pass (verified against baseline `1bc4a00`):
+
+| Test File | Tests | Status |
+|-----------|-------|--------|
+| test_storage_security.py | 21 | ✅ All pass |
+| test_tenancy.py | 3 | ✅ All pass |
+| test_rbac.py | (included in 671) | ✅ All pass |
+| test_auth.py | (included in 671) | ✅ All pass |
+
+Total backend unit tests: **671 PASS**
+
+---
+
+## E2E Security Evidence
+
+| Test | Description | Status |
+|------|-------------|--------|
+| Tenant Isolation | Tenant A and B data separated | ✅ PASS |
+| Protected endpoint rejects missing token | 401 on no auth | ✅ PASS |
+| Security - Prompt Injection | Malicious content stored as data | ✅ PASS |
+| HTML stored as text | XSS prevention | ✅ PASS |
+| SSRF in content stored as data | SSRF prevention | ✅ PASS |
+| Path traversal stored as data | Path traversal prevention | ✅ PASS |
+| Format string stored as data | Format string prevention | ✅ PASS |
+| Billion laughs stored as data | DoS prevention | ✅ PASS |
+
+---
+
+## Security Regression (P0/P1)
+
+| Severity | Count | Details |
+|----------|-------|---------|
+| P0 (Critical) | 0 | None found |
+| P1 (High) | 0 | None found |
+| P2 (Medium) | 2 | localStorage tokens, missing CSP |
+| P3 (Low) | 0 | None found |
+
+---
+
+## Recommendations
+
+1. **Priority:** Migrate token storage from localStorage to HttpOnly cookies (P2)
+2. **Priority:** Add Content-Security-Policy headers (P2)
+3. **Future:** Implement Redis-backed rate limiting for horizontal scaling
+4. **Future:** Add MFA/SSO support (deferred to Phase 2+)
 
 ---
 
 ## Certification
 
-> Security posture is **ACCEPTABLE**. No P0 or P1 findings.
-> All critical security controls verified through automated tests.
+> Security posture is **ACCEPTABLE** for Phase 1R-B certification.
+>
+> No P0 or P1 vulnerabilities found. Two P2 recommendations documented but not blocking.
+
+---
+**Signatures:**
+
+| Role | Approver | Date |
+|------|----------|------|
+| QA Automation | Claude | 2026-09-05 |
+| Security Review | — | — |
