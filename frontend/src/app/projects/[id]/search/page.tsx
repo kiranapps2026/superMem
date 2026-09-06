@@ -35,16 +35,15 @@ export default function SearchPage() {
     try {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const token = getToken();
+      const params = new URLSearchParams({
+        query: query.trim(),
+        limit: String(PAGE_SIZE),
+      });
+      if (memoryType) params.set('memory_type', memoryType);
+
       const res = await fetch(
-        `${API_BASE}/api/v1/ingest/search`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-          },
-          body: JSON.stringify({ query: query.trim(), limit: PAGE_SIZE, memory_type: memoryType || null }),
-        }
+        `${API_BASE}/api/v1/ingest/search?${params}`,
+        { method: 'POST', headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as SearchResponse;
@@ -138,8 +137,8 @@ export default function SearchPage() {
           <div key={r.id} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4 hover:border-[var(--sv-accent)]/30 transition-colors">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
-                <Badge category={r.item_type === 'fact' ? 'evidence' : r.item_type === 'decision' ? 'temporal' : 'status'} value={r.item_type} size="sm" />
-                {r.temporal_status && <Badge category="temporal" value={r.temporal_status} size="sm" />}
+                <span className="text-xs text-[var(--sv-accent)] bg-[var(--sv-accent-subtle)] px-2 py-0.5 rounded-full font-medium">{r.item_type}</span>
+                {r.temporal_status && <Badge category="temporal" value={r.temporal_status.toUpperCase()} size="sm" />}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[var(--sv-text-tertiary)]">{Math.round(r.score * 100)}%</span>

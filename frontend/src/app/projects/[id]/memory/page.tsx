@@ -4,6 +4,13 @@ import { MemoryItemOut } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
+import { Brain, Filter, X } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorAlert } from '@/components/ui/ErrorAlert';
+import { Pagination } from '@/components/ui/Pagination';
+
+const PAGE_SIZE = 20;
 
 export default function MemoryPage() {
   const { user } = useAuth();
@@ -11,60 +18,101 @@ export default function MemoryPage() {
   const projectId = params.id as string;
   const [items, setItems] = useState<MemoryItemOut[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('');
+  const [memoryType, setMemoryType] = useState('');
   const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    setError(null);
     try {
-      const baseUrl = `/api/v1/memory/?limit=50&offset=${page * 50}&project_id=${encodeURIComponent(projectId)}`;
-      if (filter) {
-        const data = await apiGet<MemoryItemOut[]>(`${baseUrl}&memory_type=${encodeURIComponent(filter)}`);
-        setItems(data);
-      } else {
-        const data = await apiGet<MemoryItemOut[]>(baseUrl);
-        setItems(data);
-      }
-    } catch {}
-    finally { setLoading(false); }
-  }, [user, projectId, filter, page]);
+      const url = `/api/v1/memory/?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}&project_id=${encodeURIComponent(projectId)}${memoryType ? `&memory_type=${encodeURIComponent(memoryType)}` : ''}`;
+      const data = await apiGet<MemoryItemOut[]>(url);
+      setItems(data);
+      setTotal(data.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load memory');
+    } finally { setLoading(false); }
+  }, [user, projectId, memoryType, page]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   const tagsFor = (item: MemoryItemOut): string[] => (item.extra_metadata?.tags as string[]) || [];
 
+  if (!user) {
+    return <div className="flex items-center justify-center h-full"><p className="text-sm text-[var(--sv-text-tertiary)]">Sign in to view memory.</p></div>;
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Memory</h1>
-          <p className="text-sm text-gray-500">{items.length} items</p>
+          <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">Memory</h1>
+          <p className="text-sm text-[var(--sv-text-tertiary)] mt-1">{total} item{total !== 1 ? 's' : ''} in this project</p>
         </div>
-        <input value={filter} onChange={(e) => { setFilter(e.target.value); setPage(0); }}
-          placeholder="Filter by type…" className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent)]" />
+        <div className="relative">
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--sv-text-disabled)]" />
+          <select
+            value={memoryType}
+            onChange={(e) => { setMemoryType(e.target.value); setPage(0); }}
+            className="bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md pl-8 pr-3 py-1.5 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors appearance-none"
+          >
+            <option value="">All types</option>
+            <option value="semantic_memory">Semantic</option>
+            <option value="episodic_memory">Episodic</option>
+            <option value="procedural_memory">Procedural</option>
+            <option value="working_memory">Working</option>
+          </select>
+        </div>
       </div>
-      {loading ? <div className="text-sm text-gray-500">Loading…</div> : items.length === 0 ? (
-        <p className="text-sm text-gray-500">No memory items yet. Ingest sessions to populate memory.</p>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div key={item.id} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium bg-[var(--bg-tertiary)] px-2 py-0.5 rounded">{item.memory_type}</span>
-                <div className="flex items-center gap-2">
-                  {item.temporal_status && <span className={`text-xs px-2 py-0.5 rounded ${item.temporal_status === 'current' ? 'bg-green-400/10 text-green-400' : 'bg-yellow-400/10 text-yellow-400'}`}>{item.temporal_status}</span>}
-                  <span className="text-xs text-gray-500">{new Date(item.created_at).toLocaleString()}</span>
-                </div>
+
+      {/* Error */}
+      {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+
+      {/* Loading */}
+      {loading && <div className="text-sm text-[var(--sv-text-tertiary)]">Loading…</div>}
+
+      {/* Empty */}
+      {!loading && items.length === 0 && !error && (
+        <EmptyState
+          icon={<Brain size={32} className="text-[var(--sv-text-disabled)]" />}
+          title="No memory yet"
+          description="Ingest sessions or chat with AI to build project memory."
+        />
+      )}
+
+      {/* List */}
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4 hover:border-[var(--sv-accent)]/30 transition-colors">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <Badge category="evidence" value={item.memory_type.replace('_memory', '').toUpperCase()} size="sm" />
+                <Badge category="authority" value={item.authority >= 0.8 ? 'VERIFIED' : item.authority >= 0.5 ? 'OBSERVED' : 'INFERRED'} size="sm" />
+                {item.temporal_status && <Badge category="temporal" value={item.temporal_status.toUpperCase()} size="sm" />}
               </div>
-              <p className="text-sm text-gray-300 line-clamp-3">{item.content}</p>
-              {tagsFor(item).length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {tagsFor(item).map((t: string) => <span key={t} className="text-xs text-gray-500 bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">{t}</span>)}
-                </div>
-              )}
+              <span className="text-xs text-[var(--sv-text-disabled)]">{new Date(item.created_at).toLocaleString()}</span>
             </div>
-          ))}
+            <p className="text-sm text-[var(--sv-text-secondary)] leading-relaxed line-clamp-3">{item.content}</p>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex flex-wrap gap-1">
+                {tagsFor(item).map((t: string) => (
+                  <span key={t} className="text-[10px] text-[var(--sv-text-tertiary)] bg-[var(--sv-bg-overlay)] px-1.5 py-0.5 rounded border border-[var(--sv-border-subtle)]">{t}</span>
+                ))}
+              </div>
+              <span className="text-[10px] text-[var(--sv-text-disabled)]">Confidence: {Math.round(item.confidence * 100)}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {items.length >= PAGE_SIZE && (
+        <div className="pt-2">
+          <Pagination page={page} totalPages={page + 2} onPageChange={setPage} />
         </div>
       )}
     </div>

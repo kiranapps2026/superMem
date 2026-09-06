@@ -1,56 +1,77 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { TimelineItem, TimelineResponse } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
-import { GitBranch, CheckSquare } from 'lucide-react';
-
-interface TimelineEvent {
-  item_type: 'memory' | 'fact' | 'decision';
-  id: string;
-  title: string;
-  timestamp: string | null;
-  temporal_status: string | null;
-  content: string;
-}
+import { GitBranch, CheckSquare, Brain } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorAlert } from '@/components/ui/ErrorAlert';
 
 export default function TimelinePage() {
   const { user } = useAuth();
   const params = useParams();
   const projectId = params.id as string;
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [events, setEvents] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
+    setError(null);
     try {
-      const data = await apiGet<{ items: TimelineEvent[] }>(`/api/v1/ingest/timeline?project_id=${encodeURIComponent(projectId)}&limit=100`);
+      const data = await apiGet<TimelineResponse>(`/api/v1/ingest/timeline?project_id=${encodeURIComponent(projectId)}&limit=100`);
       setEvents(data.items || []);
-    } catch {}
-    finally { setLoading(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load timeline');
+    } finally { setLoading(false); }
   }, [user, projectId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-gray-500">Loading…</div></div>;
+  if (!user) {
+    return <div className="flex items-center justify-center h-full"><p className="text-sm text-[var(--sv-text-tertiary)]">Sign in to view timeline.</p></div>;
+  }
+
+  const typeIcon = (type: string) => {
+    if (type === 'decision') return <CheckSquare size={14} className="text-[var(--sv-auth-decision)]" />;
+    if (type === 'fact') return <GitBranch size={14} className="text-[var(--sv-evidence-processed)]" />;
+    return <Brain size={14} className="text-[var(--sv-evidence-integrated)]" />;
+  };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-xl font-semibold mb-6">Timeline</h1>
-      {events.length === 0 ? <p className="text-sm text-gray-500">No events yet.</p> : (
-        <div className="relative pl-4 border-l border-[var(--border)] space-y-4">
+    <div className="max-w-3xl mx-auto p-6 space-y-4">
+      <div>
+        <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">Timeline</h1>
+        <p className="text-sm text-[var(--sv-text-tertiary)] mt-1">Chronological view of project knowledge</p>
+      </div>
+
+      {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+
+      {loading && <div className="text-sm text-[var(--sv-text-tertiary)]">Loading…</div>}
+
+      {!loading && events.length === 0 && !error && (
+        <EmptyState
+          icon={<GitBranch size={32} className="text-[var(--sv-text-disabled)]" />}
+          title="No events yet"
+          description="Timeline events appear as memories, facts, and decisions are extracted."
+        />
+      )}
+
+      {events.length > 0 && (
+        <div className="relative pl-6 border-l border-[var(--sv-border-default)] space-y-4">
           {events.map((ev) => (
             <div key={`${ev.item_type}-${ev.id}`} className="relative">
-              <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
-              <p className="text-xs text-gray-500">{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : 'Unknown date'}</p>
+              <div className="absolute -left-[25px] w-2.5 h-2.5 rounded-full bg-[var(--sv-accent)] border-2 border-[var(--sv-bg-base)]" />
+              <p className="text-xs text-[var(--sv-text-disabled)]">{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : 'Unknown date'}</p>
               <div className="flex items-center gap-2 mt-1">
-                {ev.item_type === 'decision' ? <CheckSquare size={14} className="text-gray-400" /> : <GitBranch size={14} className="text-gray-400" />}
-                <span className="text-xs text-gray-400 uppercase">{ev.item_type}</span>
-                {ev.temporal_status && (
-                  <span className={`text-xs px-2 py-0.5 rounded ${ev.temporal_status === 'current' ? 'bg-green-400/10 text-green-400' : 'bg-yellow-400/10 text-yellow-400'}`}>{ev.temporal_status}</span>
-                )}
+                {typeIcon(ev.item_type)}
+                <span className="text-xs text-[var(--sv-text-tertiary)] uppercase font-medium">{ev.item_type}</span>
+                {ev.temporal_status && <Badge category="temporal" value={ev.temporal_status.toUpperCase()} size="sm" />}
               </div>
-              <p className="text-sm mt-1 line-clamp-3">{ev.title || ev.content}</p>
+              <p className="text-sm text-[var(--sv-text-secondary)] mt-1.5 leading-relaxed">{ev.title || ev.content}</p>
             </div>
           ))}
         </div>
