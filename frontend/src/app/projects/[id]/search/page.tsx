@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
-import { apiGet, getToken } from '@/lib/api';
+import { apiPost, getToken } from '@/lib/api';
 import { Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -33,20 +33,9 @@ export default function SearchPage() {
     setError(null);
     setPage(1);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const token = getToken();
-      const params = new URLSearchParams({
-        query: query.trim(),
-        limit: String(PAGE_SIZE),
-      });
+      const params = new URLSearchParams({ query: query.trim(), limit: String(PAGE_SIZE) });
       if (memoryType) params.set('memory_type', memoryType);
-
-      const res = await fetch(
-        `${API_BASE}/api/v1/ingest/search?${params}`,
-        { method: 'POST', headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as SearchResponse;
+      const data = await apiPost<SearchResponse>(`/api/v1/ingest/search?${params.toString()}`, undefined);
       setResults(data.items || []);
       setTotal(data.total || 0);
     } catch (err) {
