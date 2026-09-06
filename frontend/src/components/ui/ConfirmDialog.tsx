@@ -44,13 +44,13 @@ export function ConfirmDialog({
       className="fixed inset-0 z-50 flex items-center justify-center"
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-xl max-w-sm w-full mx-4 p-5">
-        <h3 id="confirm-dialog-title" className="text-sm font-medium">{title}</h3>
-        <p className="text-sm text-gray-400 mt-2">{description}</p>
+      <div className="relative bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg shadow-xl max-w-sm w-full mx-4 p-5">
+        <h3 id="confirm-dialog-title" className="text-sm font-medium text-[var(--sv-text-primary)]">{title}</h3>
+        <p className="text-sm text-[var(--sv-text-secondary)] mt-2">{description}</p>
         <div className="flex justify-end gap-2 mt-5">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-sm rounded-md text-gray-300 hover:bg-white/5 border border-[var(--border)] transition-colors"
+            className="px-3 py-1.5 text-sm rounded-md text-[var(--sv-text-tertiary)] hover:text-[var(--sv-text-primary)] hover:bg-[var(--sv-bg-overlay)] border border-[var(--sv-border-default)] transition-colors"
           >
             Cancel
           </button>
@@ -59,8 +59,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
               danger
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
+                ? 'bg-[var(--sv-error)] text-[var(--sv-text-inverse)] hover:bg-[var(--sv-error)]/80'
+                : 'bg-[var(--sv-accent)] text-[var(--sv-text-inverse)] hover:bg-[var(--sv-accent-hover)]'
             }`}
           >
             {confirmLabel}

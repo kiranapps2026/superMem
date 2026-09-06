@@ -21,7 +21,7 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
   }, [user, loading, isPublic, router, pathname]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen"><div className="text-sm text-gray-500">Loading…</div></div>;
+    return <div className="flex items-center justify-center h-screen"><div className="text-sm text-[var(--sv-text-tertiary)]">Loading…</div></div>;
   }
   if (!user && !isPublic) return null;
   if (user && isPublic) return null;

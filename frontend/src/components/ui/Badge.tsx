@@ -5,12 +5,12 @@ import { type ReactNode } from 'react';
 /* ── Variant categories ───────────────────────────────── */
 
 const STATUS_VARIANTS: Record<string, string> = {
-  default:  'bg-gray-500/15 text-gray-300',
+  default:  'bg-[var(--sv-bg-raised)] text-[var(--sv-text-tertiary)]',
   success:  'bg-[var(--sv-success)]/15 text-[var(--sv-success)]',
   warning:  'bg-[var(--sv-warning)]/15 text-[var(--sv-warning)]',
   danger:   'bg-[var(--sv-error)]/15 text-[var(--sv-error)]',
   info:     'bg-[var(--sv-info)]/15 text-[var(--sv-info)]',
-  purple:   'bg-[var(--sv-auth-decision)]/15 text-[var(--sv-auth-decision)]',
+  muted:    'bg-[var(--sv-bg-overlay)] text-[var(--sv-text-tertiary)]',
 };
 
 const AUTHORITY_VARIANTS: Record<string, string> = {

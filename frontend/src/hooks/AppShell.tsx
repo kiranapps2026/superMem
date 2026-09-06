@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [user, loading, isAuthPage, router, pathname]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen"><div className="text-sm text-gray-500">Loading…</div></div>;
+    return <div className="flex items-center justify-center h-screen"><div className="text-sm text-[var(--sv-text-tertiary)]">Loading…</div></div>;
   }
 
   // Auth pages - no sidebar

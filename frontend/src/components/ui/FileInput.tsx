@@ -32,8 +32,8 @@ export function FileInput({ onFile, accept, disabled, children }: FileInputProps
       }}
       className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
         dragOver
-          ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-          : 'border-[var(--border)] hover:border-gray-600'
+          ? 'border-[var(--sv-accent)] bg-[var(--sv-accent)]/5'
+          : 'border-[var(--sv-border-default)] hover:border-[var(--sv-text-tertiary)]'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <input
@@ -47,8 +47,8 @@ export function FileInput({ onFile, accept, disabled, children }: FileInputProps
       />
       {children || (
         <div>
-          <p className="text-sm text-gray-400">Drop a file here or click to browse</p>
-          {accept && <p className="text-xs text-gray-600 mt-1">{accept}</p>}
+          <p className="text-sm text-[var(--sv-text-secondary)]">Drop a file here or click to browse</p>
+          {accept && <p className="text-xs text-[var(--sv-text-tertiary)] mt-1">{accept}</p>}
         </div>
       )}
     </div>

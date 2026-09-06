@@ -8,7 +8,7 @@ import {
 } from '@/components/ui';
 import { Settings, Trash2, Check, X, Copy, RefreshCw, Shield, Users } from 'lucide-react';
 import { useProject, useUpdateProject, useDeleteProject } from '@/features/projects/useProjects';
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
+import { apiGet } from '@/lib/api';
 import { WorkspaceMemberOut } from '@/types/api';
 
 type Tab = 'general' | 'members' | 'danger';
@@ -31,7 +31,6 @@ export default function ProjectSettingsPage() {
   const [membersLoading, setMembersLoading] = useState(false);
   const { copied: copiedKey, copy } = useClipboard({ timeout: 3000 });
 
-  // Sync local state when project loads
   useEffect(() => {
     if (project) {
       setName(project.name);
@@ -81,16 +80,20 @@ export default function ProjectSettingsPage() {
     }
   };
 
+  const ROLE_VARIANTS: Record<string, string> = {
+    owner: 'purple', admin: 'warning', member: 'default', viewer: 'info',
+  };
+
   if (loading) return <div className="flex items-center justify-center h-full"><LoadingSpinner size="lg" /></div>;
-  if (!project) return <div className="flex items-center justify-center h-full"><p className="text-sm text-gray-500">Project not found.</p></div>;
+  if (!project) return <div className="flex items-center justify-center h-full"><p className="text-sm text-[var(--sv-text-tertiary)]">Project not found.</p></div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Settings size={20} className="text-gray-400" />
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <Settings size={20} className="text-[var(--sv-text-tertiary)]" />
         <div>
-          <h1 className="text-xl font-semibold">Project Settings</h1>
-          <p className="text-sm text-gray-500">{project.name}</p>
+          <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">Project Settings</h1>
+          <p className="text-sm text-[var(--sv-text-tertiary)]">{project.name}</p>
         </div>
       </div>
 
@@ -102,12 +105,12 @@ export default function ProjectSettingsPage() {
         />
       )}
 
-      <div className="flex gap-1 mb-6 border-b border-[var(--border)]">
+      <div className="flex gap-1 mb-6 border-b border-[var(--sv-border-default)]">
         {(['general', 'members', 'danger'] as Tab[]).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-[var(--accent)] text-white' : 'border-transparent text-gray-400 hover:text-white'}`}
+            className={`px-4 py-2 text-sm border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-[var(--sv-accent)] text-[var(--sv-text-primary)]' : 'border-transparent text-[var(--sv-text-tertiary)] hover:text-[var(--sv-text-primary)]'}`}
           >
             {tab === 'danger' ? 'Danger Zone' : tab}
           </button>
@@ -115,72 +118,75 @@ export default function ProjectSettingsPage() {
       </div>
 
       {activeTab === 'general' && (
-        <Card title="General" subtitle="Update project details">
+        <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-5">
+          <h2 className="text-sm font-medium text-[var(--sv-text-primary)] mb-4">General</h2>
           <form onSubmit={saveGeneral} className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Project name</label>
+              <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Project name</label>
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+                className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Description</label>
+              <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Description</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={3}
-                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+                className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors resize-none"
               />
             </div>
-            <button type="submit" disabled={saving} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-md text-sm disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={saving} className="bg-[var(--sv-accent)] hover:bg-[var(--sv-accent-hover)] text-[var(--sv-text-inverse)] px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 transition-colors">
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </form>
-        </Card>
+        </div>
       )}
 
       {activeTab === 'members' && (
-        <Card title="Members" subtitle={`${members.length} members`}>
+        <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-[var(--sv-border-subtle)]">
+            <h2 className="text-sm font-medium text-[var(--sv-text-primary)]">Members ({members.length})</h2>
+          </div>
           {membersLoading ? (
             <div className="py-4"><LoadingSpinner /></div>
           ) : members.length === 0 ? (
             <EmptyState icon={<Users size={20} />} title="No members" description="Members will appear here when they join." />
           ) : (
-            <div className="divide-y divide-[var(--border)]">
+            <div className="divide-y divide-[var(--sv-border-subtle)]">
               {members.map(m => (
-                <div key={m.id} className="flex items-center gap-3 py-3">
-                  <div className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center shrink-0">
-                    <span className="text-xs font-medium text-gray-400">{(m.user_name || m.user_email).charAt(0).toUpperCase()}</span>
+                <div key={m.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="w-8 h-8 rounded-full bg-[var(--sv-bg-overlay)] border border-[var(--sv-border-subtle)] flex items-center justify-center shrink-0">
+                    <span className="text-xs font-medium text-[var(--sv-text-tertiary)]">{(m.user_name || m.user_email).charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
-                    <p className="text-xs text-gray-500">{m.user_email}</p>
+                    <p className="text-sm font-medium text-[var(--sv-text-primary)] truncate">{m.user_name || m.user_email}</p>
+                    <p className="text-xs text-[var(--sv-text-tertiary)]">{m.user_email}</p>
                   </div>
-                  <Badge variant="purple">{m.role}</Badge>
+                  <Badge category="authority" value={m.role.toUpperCase()} variant={ROLE_VARIANTS[m.role] || 'default'} size="sm" />
                 </div>
               ))}
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {activeTab === 'danger' && (
-        <Card title="Danger Zone">
-          <div className="space-y-4">
-            <p className="text-sm text-gray-400">
-              Once you delete a project, there is no going back. All data including memories, facts, decisions, and ingested sources will be permanently removed.
-            </p>
-            <button
-              onClick={() => setShowDelete(true)}
-              className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 px-4 py-2 rounded-md text-sm transition-colors"
-            >
-              <Trash2 size={14} /> Delete this project
-            </button>
-          </div>
-        </Card>
+        <div className="bg-[var(--sv-error)]/5 border border-[var(--sv-error)]/20 rounded-lg p-5">
+          <h2 className="text-sm font-medium text-[var(--sv-error)] mb-4">Danger Zone</h2>
+          <p className="text-sm text-[var(--sv-text-tertiary)] mb-4">
+            Once you delete a project, there is no going back. All data including memories, facts, decisions, and ingested sources will be permanently removed.
+          </p>
+          <button
+            onClick={() => setShowDelete(true)}
+            className="flex items-center gap-2 bg-[var(--sv-error)]/10 border border-[var(--sv-error)]/30 text-[var(--sv-error)] hover:bg-[var(--sv-error)]/20 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            <Trash2 size={14} /> Delete this project
+          </button>
+        </div>
       )}
 
       <ConfirmDialog
