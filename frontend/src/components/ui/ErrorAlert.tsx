@@ -11,18 +11,18 @@ export function ErrorAlert({ title = 'Error', message, onRetry, onDismiss }: Err
   return (
     <div
       role="alert"
-      className="bg-red-500/10 border border-red-500/30 rounded-lg p-4"
+      className="bg-[var(--sv-error)]/10 border border-[var(--sv-error)]/30 rounded-lg p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h4 className="text-sm font-medium text-red-400">{title}</h4>
-          <p className="text-sm text-red-300/80 mt-0.5">{message}</p>
+          <h4 className="text-sm font-medium text-[var(--sv-error)]">{title}</h4>
+          <p className="text-sm text-[var(--sv-error)]/80 mt-0.5">{message}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {onRetry && (
             <button
               onClick={onRetry}
-              className="text-xs px-2.5 py-1 rounded border border-red-500/30 text-red-300 hover:bg-red-500/10 transition-colors"
+              className="text-xs px-2.5 py-1 rounded border border-[var(--sv-error)]/30 text-[var(--sv-error)]/80 hover:bg-[var(--sv-error)]/10 transition-colors"
             >
               Retry
             </button>
@@ -30,7 +30,7 @@ export function ErrorAlert({ title = 'Error', message, onRetry, onDismiss }: Err
           {onDismiss && (
             <button
               onClick={onDismiss}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-[var(--sv-text-tertiary)] hover:text-[var(--sv-text-primary)] transition-colors"
               aria-label="Dismiss error"
             >
               &times;

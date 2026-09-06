@@ -56,69 +56,67 @@ export default function ApiKeysPage() {
   }, []);
 
   const RawKeyDisplay = ({ keyValue, label }: { keyValue: string; label: string }) => (
-    <div className="bg-[var(--bg-primary)] border border-[var(--accent)]/30 rounded-lg p-4 mt-4">
-      <p className="text-xs text-yellow-400 font-medium mb-2">{label} — copy this now. It won&apos;t be shown again.</p>
+    <div className="bg-[var(--sv-accent-subtle)] border border-[var(--sv-accent)]/30 rounded-lg p-4 mt-4">
+      <p className="text-xs text-[var(--sv-warning)] font-medium mb-2">{label} — copy this now. It won&apos;t be shown again.</p>
       <div className="flex items-center gap-2">
-        <code className="flex-1 text-xs text-gray-300 break-all font-mono bg-black/30 rounded px-2 py-1">{keyValue}</code>
-        <button onClick={() => copy(keyValue)} className="shrink-0 p-1.5 rounded hover:bg-white/5" aria-label="Copy key">
-          {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-gray-400" />}
+        <code className="flex-1 text-xs text-[var(--sv-text-secondary)] break-all font-mono bg-[var(--sv-bg-primary)] rounded px-2 py-1">{keyValue}</code>
+        <button onClick={() => copy(keyValue)} className="shrink-0 p-1.5 rounded hover:bg-[var(--sv-bg-overlay)]" aria-label="Copy key">
+          {copied ? <Check size={14} className="text-[var(--sv-success)]" /> : <Copy size={14} className="text-[var(--sv-text-tertiary)]" />}
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center gap-2 mb-1">
-        <Shield size={18} className="text-gray-500" />
-        <h1 className="text-xl font-semibold">API Keys</h1>
+    <div className="max-w-3xl mx-auto p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <Shield size={18} className="text-[var(--sv-text-tertiary)]" />
+        <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">API Keys</h1>
       </div>
-      <p className="text-sm text-gray-500 mb-6">Manage workspace API keys for programmatic access.</p>
+      <p className="text-sm text-[var(--sv-text-tertiary)]">Manage workspace API keys for programmatic access.</p>
 
       {(error || localError) && (
-        <div className="mb-4">
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-sm text-red-400">
-            {localError || error}
-          </div>
+        <div className="bg-[var(--sv-error)]/10 border border-[var(--sv-error)]/30 rounded-lg px-4 py-2.5 text-sm text-[var(--sv-error)]">
+          {localError || error}
         </div>
       )}
 
       {rawKey && <RawKeyDisplay keyValue={rawKey} label="New API key created" />}
       {rotatedKey && <RawKeyDisplay keyValue={rotatedKey} label="API key rotated" />}
 
-      <Card title="Create API Key" className="mb-6">
+      <Card title="Create API Key" className="bg-[var(--sv-bg-raised)] border-[var(--sv-border-default)]">
         <form onSubmit={handleCreate} className="flex gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Key name (e.g. CI/CD pipeline)"
-            className="flex-1 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+            className="flex-1 bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] placeholder:text-[var(--sv-text-disabled)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors"
             required
           />
-          <button type="submit" disabled={creating} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-md text-sm disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5">
+          <button type="submit" disabled={creating} className="bg-[var(--sv-accent)] hover:bg-[var(--sv-accent-hover)] text-[var(--sv-text-inverse)] px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 transition-colors whitespace-nowrap flex items-center gap-1.5">
             <Plus size={14} />{creating ? 'Creating…' : 'Create'}
           </button>
         </form>
       </Card>
 
-      <Card title="Active Keys">
+      <Card title="Active Keys" className="bg-[var(--sv-bg-raised)] border-[var(--sv-border-default)]">
         {loading ? (
           <div className="flex justify-center py-8"><LoadingSpinner size="lg" /></div>
         ) : keys.length === 0 ? (
-          <EmptyState icon={<Key size={24} />} title="No API keys" description="Create a key to enable programmatic access." />
+          <EmptyState icon={<Key size={24} className="text-[var(--sv-text-disabled)]" />} title="No API keys" description="Create a key to enable programmatic access." />
         ) : (
-          <div className="divide-y divide-[var(--border)]">
+          <div className="divide-y divide-[var(--sv-border-subtle)]">
             {keys.map((k) => (
               <div key={k.id} className="flex items-center gap-4 px-4 py-3">
-                <Key size={16} className="text-gray-500 shrink-0" />
+                <Key size={16} className="text-[var(--sv-text-tertiary)] shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{k.name}</p>
-                  <p className="text-xs text-gray-500 font-mono">{maskKey(k.key_prefix)} · Created {formatDate(k.created_at)} · Last used {formatDate(k.last_used_at)}</p>
+                  <p className="text-sm font-medium text-[var(--sv-text-primary)]">{k.name}</p>
+                  <p className="text-xs text-[var(--sv-text-tertiary)] font-mono">{maskKey(k.key_prefix)} · Created {formatDate(k.created_at)} · Last used {formatDate(k.last_used_at)}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => setShowRotate(k.id)}
-                    className="p-1.5 rounded hover:bg-white/5 text-gray-400 hover:text-yellow-400"
+                    className="p-1.5 rounded hover:bg-[var(--sv-warning)]/10 text-[var(--sv-text-tertiary)] hover:text-[var(--sv-warning)] transition-colors"
                     aria-label={`Rotate key ${k.name}`}
                     title="Rotate key"
                   >
@@ -126,7 +124,7 @@ export default function ApiKeysPage() {
                   </button>
                   <button
                     onClick={() => setShowRevoke(k.id)}
-                    className="p-1.5 rounded hover:bg-white/5 text-gray-400 hover:text-red-400"
+                    className="p-1.5 rounded hover:bg-[var(--sv-error)]/10 text-[var(--sv-text-tertiary)] hover:text-[var(--sv-error)] transition-colors"
                     aria-label={`Revoke key ${k.name}`}
                     title="Revoke key"
                   >

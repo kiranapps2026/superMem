@@ -1,20 +1,22 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, FormEvent } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiGet, apiPatch, apiDelete, apiPost } from '@/lib/api';
 import { WorkspaceDetail, WorkspaceMemberOut, InvitationOut } from '@/types/api';
 import {
   User, Shield, Mail, Users, Trash2,
-  UserPlus, X, Clock
+  UserPlus, X, Clock, Save, ArrowLeft
 } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { ErrorAlert } from '@/components/ui/ErrorAlert';
 
 type Tab = 'workspace' | 'members' | 'invitations';
 
-const ROLE_COLORS: Record<string, string> = {
-  owner: 'bg-purple-500/20 text-purple-300',
-  admin: 'bg-blue-500/20 text-blue-300',
-  member: 'bg-gray-500/20 text-gray-300',
-  viewer: 'bg-green-500/20 text-green-300',
+const ROLE_VARIANTS: Record<string, string> = {
+  owner: 'purple',
+  admin: 'warning',
+  member: 'default',
+  viewer: 'info',
 };
 const ROLE_ORDER = ['owner', 'admin', 'member', 'viewer'];
 
@@ -68,7 +70,7 @@ export default function SettingsPage() {
 
   const saveWorkspace = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
     const name = fd.get('name') as string;
     const description = fd.get('description') as string;
     setSaving(true);
@@ -81,7 +83,7 @@ export default function SettingsPage() {
     } finally { setSaving(false); }
   };
 
-  const inviteMember = async (e: React.FormEvent) => {
+  const inviteMember = async (e: FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const fd = new FormData(form);
@@ -130,67 +132,71 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-gray-500">Loading…</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-full"><div className="text-sm text-[var(--sv-text-tertiary)]">Loading…</div></div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-xl font-semibold mb-1">Settings</h1>
-      <p className="text-sm text-gray-500 mb-6">{workspace?.name || 'Workspace'}</p>
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <div>
+        <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">Settings</h1>
+        <p className="text-sm text-[var(--sv-text-tertiary)] mt-1">{workspace?.name || 'Workspace'}</p>
+      </div>
 
       {message && (
-        <div className={`mb-4 px-4 py-2.5 rounded-lg text-sm ${message.type === 'error' ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'bg-green-500/10 border border-green-500/30 text-green-400'}`}>
+        <div className={`px-4 py-2.5 rounded-lg text-sm ${message.type === 'error' ? 'bg-[var(--sv-error)]/10 border border-[var(--sv-error)]/30 text-[var(--sv-error)]' : 'bg-[var(--sv-success)]/10 border border-[var(--sv-success)]/30 text-[var(--sv-success)]'}`}>
           {message.text}
         </div>
       )}
 
-      <div className="flex gap-1 mb-6 border-b border-[var(--border)]">
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-[var(--sv-border-default)]">
         {([
           { key: 'workspace', label: 'Workspace', icon: Shield },
           { key: 'members', label: `Members (${members.length})`, icon: Users },
           { key: 'invitations', label: 'Invitations', icon: Mail },
         ] as { key: Tab; label: string; icon: any }[]).map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm border-b-2 transition-colors flex items-center gap-2 ${activeTab === tab.key ? 'border-[var(--accent)] text-white' : 'border-transparent text-gray-400 hover:text-white'}`}>
+            className={`px-4 py-2 text-sm border-b-2 transition-colors flex items-center gap-2 ${activeTab === tab.key ? 'border-[var(--sv-accent)] text-[var(--sv-text-primary)]' : 'border-transparent text-[var(--sv-text-tertiary)] hover:text-[var(--sv-text-primary)]'}`}>
             <tab.icon size={14} />{tab.label}
           </button>
         ))}
       </div>
 
+      {/* Workspace tab */}
       {activeTab === 'workspace' && (
         <div className="space-y-6">
           <section>
-            <div className="flex items-center gap-2 mb-3"><Shield size={16} className="text-gray-500" /><h2 className="font-medium text-sm">Workspace Details</h2></div>
-            <form onSubmit={saveWorkspace} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-3"><Shield size={16} className="text-[var(--sv-text-tertiary)]" /><h2 className="font-medium text-sm text-[var(--sv-text-primary)]">Workspace Details</h2></div>
+            <form onSubmit={saveWorkspace} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-5 space-y-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Name</label>
+                <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Name</label>
                 <input name="name" defaultValue={workspace?.name || ''} required
-                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" />
+                  className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Description</label>
+                <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Description</label>
                 <textarea name="description" defaultValue={workspace?.description || ''} rows={3}
-                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" />
+                  className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors resize-none" />
               </div>
-              <button type="submit" disabled={saving} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-1.5 rounded-md text-sm disabled:opacity-50 transition-colors">
-                {saving ? 'Saving…' : 'Save changes'}
+              <button type="submit" disabled={saving} className="bg-[var(--sv-accent)] hover:bg-[var(--sv-accent-hover)] text-[var(--sv-text-inverse)] px-4 py-1.5 rounded-md text-sm font-medium disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                <Save size={14} /> {saving ? 'Saving…' : 'Save changes'}
               </button>
             </form>
           </section>
 
           <section>
-            <div className="flex items-center gap-2 mb-3"><User size={16} className="text-gray-500" /><h2 className="font-medium text-sm">Profile</h2></div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-5 space-y-3">
-              <div><label className="block text-xs text-gray-500 mb-1">Email</label><p className="text-sm">{user?.email}</p></div>
-              <div><label className="block text-xs text-gray-500 mb-1">Name</label><p className="text-sm">{user?.name || '—'}</p></div>
-              <div><label className="block text-xs text-gray-500 mb-1">Role</label><p className="text-sm capitalize">{currentUserRole}</p></div>
+            <div className="flex items-center gap-2 mb-3"><User size={16} className="text-[var(--sv-text-tertiary)]" /><h2 className="font-medium text-sm text-[var(--sv-text-primary)]">Profile</h2></div>
+            <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-5 space-y-3">
+              <div><label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Email</label><p className="text-sm text-[var(--sv-text-primary)]">{user?.email}</p></div>
+              <div><label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Name</label><p className="text-sm text-[var(--sv-text-primary)]">{user?.name || '—'}</p></div>
+              <div><label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Role</label><p className="text-sm text-[var(--sv-text-primary)] capitalize">{currentUserRole}</p></div>
             </div>
           </section>
 
           <section>
-            <div className="flex items-center gap-2 mb-3"><Shield size={16} className="text-gray-500" /><h2 className="font-medium text-sm">Password</h2></div>
+            <div className="flex items-center gap-2 mb-3"><Shield size={16} className="text-[var(--sv-text-tertiary)]" /><h2 className="font-medium text-sm text-[var(--sv-text-primary)]">Password</h2></div>
             <form onSubmit={async (e) => {
               e.preventDefault();
-              const fd = new FormData(e.currentTarget);
+              const fd = new FormData(e.currentTarget as HTMLFormElement);
               try {
                 await apiPost('/api/v1/auth/change-password', { current_password: fd.get('current') as string, new_password: fd.get('new') as string });
                 showMessage('success', 'Password updated');
@@ -198,35 +204,38 @@ export default function SettingsPage() {
               } catch (err) {
                 showMessage('error', err instanceof Error ? err.message : 'Failed');
               }
-            }} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-5 space-y-4">
+            }} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-5 space-y-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Current password</label>
-                <input name="current" type="password" required className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded px-3 py-2 text-sm" />
+                <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">Current password</label>
+                <input name="current" type="password" required
+                  className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">New password</label>
-                <input name="new" type="password" required minLength={8} className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded px-3 py-2 text-sm" />
+                <label className="block text-xs text-[var(--sv-text-tertiary)] mb-1">New password</label>
+                <input name="new" type="password" required minLength={8}
+                  className="w-full bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors" />
               </div>
-              <button type="submit" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-1.5 rounded-md text-sm transition-colors">Update password</button>
+              <button type="submit" className="bg-[var(--sv-accent)] hover:bg-[var(--sv-accent-hover)] text-[var(--sv-text-inverse)] px-4 py-1.5 rounded-md text-sm font-medium transition-colors">Update password</button>
             </form>
           </section>
         </div>
       )}
 
+      {/* Members tab */}
       {activeTab === 'members' && (
         <div className="space-y-6">
           {canManage && (
             <section>
-              <div className="flex items-center gap-2 mb-3"><Mail size={16} className="text-gray-500" /><h2 className="font-medium text-sm">Invite People</h2></div>
-              <form onSubmit={inviteMember} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3"><Mail size={16} className="text-[var(--sv-text-tertiary)]" /><h2 className="font-medium text-sm text-[var(--sv-text-primary)]">Invite People</h2></div>
+              <form onSubmit={inviteMember} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4">
                 <div className="flex gap-3">
                   <input type="email" name="email" placeholder="colleague@example.com" required
-                    className="flex-1 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]" />
-                  <select name="role" className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-md px-3 py-2 text-sm">
+                    className="flex-1 bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] placeholder:text-[var(--sv-text-disabled)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors" />
+                  <select name="role" className="bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-3 py-2 text-sm text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors">
                     {ROLE_ORDER.filter(r => !(r === 'owner' && !isOwner)).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
-                  <button type="submit" disabled={inviting} className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-md text-sm disabled:opacity-50 whitespace-nowrap">
-                    {inviting ? 'Sending…' : <><UserPlus size={14} /> Invite</>}
+                  <button type="submit" disabled={inviting} className="bg-[var(--sv-accent)] hover:bg-[var(--sv-accent-hover)] text-[var(--sv-text-inverse)] px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <UserPlus size={14} /> {inviting ? 'Sending…' : 'Invite'}
                   </button>
                 </div>
               </form>
@@ -234,34 +243,34 @@ export default function SettingsPage() {
           )}
 
           <section>
-            <div className="flex items-center gap-2 mb-3"><Users size={16} className="text-gray-500" /><h2 className="font-medium text-sm">Members ({members.length})</h2></div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg overflow-hidden divide-y divide-[var(--border)]">
+            <div className="flex items-center gap-2 mb-3"><Users size={16} className="text-[var(--sv-text-tertiary)]" /><h2 className="font-medium text-sm text-[var(--sv-text-primary)]">Members ({members.length})</h2></div>
+            <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg overflow-hidden divide-y divide-[var(--sv-border-subtle)]">
               {members.map((m) => {
                 const editable = canManage && m.user_id !== user?.id && m.role !== 'owner';
                 const removable = canManage && m.user_id !== user?.id && (m.role !== 'owner' || isOwner) && m.role !== 'admin';
                 return (
                   <div key={m.id} className="px-4 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium text-gray-400">{(m.user_name || m.user_email).charAt(0).toUpperCase()}</span>
+                    <div className="w-8 h-8 rounded-full bg-[var(--sv-bg-overlay)] border border-[var(--sv-border-subtle)] flex items-center justify-center shrink-0">
+                      <span className="text-xs font-medium text-[var(--sv-text-tertiary)]">{(m.user_name || m.user_email).charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
-                      <p className="text-xs text-gray-500">{m.user_email}</p>
+                      <p className="text-sm font-medium text-[var(--sv-text-primary)] truncate">{m.user_name || m.user_email}</p>
+                      <p className="text-xs text-[var(--sv-text-tertiary)]">{m.user_email}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${ROLE_COLORS[m.role] || ROLE_COLORS.member}`}>{m.role}</span>
+                      <Badge category="authority" value={m.role.toUpperCase()} variant={ROLE_VARIANTS[m.role] || 'default'} size="sm" />
                       {editable && (
                         <select
                           value={m.role}
                           onChange={(e) => changeRole(m.id, e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border)] rounded px-1.5 py-0.5 text-xs"
+                          className="bg-[var(--sv-bg-input)] border border-[var(--sv-border-default)] rounded-md px-1.5 py-0.5 text-xs text-[var(--sv-text-primary)] focus:outline-none focus:border-[var(--sv-accent)] transition-colors"
                         >
                           {ROLE_ORDER.filter(r => !(r === 'owner' && !isOwner)).map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       )}
                       {removable && (
                         <button onClick={() => removeMember(m.id, m.user_email)} disabled={removingId === m.id}
-                          className="p-1 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-400 disabled:opacity-50" title="Remove member">
+                          className="p-1 rounded hover:bg-[var(--sv-error)]/10 text-[var(--sv-text-tertiary)] hover:text-[var(--sv-error)] disabled:opacity-50 transition-colors" title="Remove member">
                           <Trash2 size={14} />
                         </button>
                       )}
@@ -269,41 +278,41 @@ export default function SettingsPage() {
                   </div>
                 );
               })}
-              {members.length === 0 && <p className="text-sm text-gray-500 text-center py-8">No members yet.</p>}
+              {members.length === 0 && <p className="text-sm text-[var(--sv-text-tertiary)] text-center py-8">No members yet.</p>}
             </div>
           </section>
         </div>
       )}
 
+      {/* Invitations tab */}
       {activeTab === 'invitations' && (
         <section>
-          <h2 className="text-sm font-medium mb-3">Pending &amp; Past Invitations</h2>
+          <h2 className="text-sm font-medium text-[var(--sv-text-primary)] mb-3">Pending &amp; Past Invitations</h2>
           {invitations.length === 0 ? (
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-8 text-center">
-              <Mail size={24} className="mx-auto text-gray-600 mb-2" />
-              <p className="text-sm text-gray-500">No invitations yet.</p>
+            <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] border-dashed rounded-lg p-8 text-center">
+              <Mail size={24} className="mx-auto text-[var(--sv-text-disabled)] mb-2" />
+              <p className="text-sm text-[var(--sv-text-tertiary)]">No invitations yet.</p>
             </div>
           ) : (
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg overflow-hidden divide-y divide-[var(--border)]">
+            <div className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg overflow-hidden divide-y divide-[var(--sv-border-subtle)]">
               {invitations.map((inv) => (
                 <div key={inv.id} className="px-4 py-3 flex items-center gap-3">
-                  <Mail size={14} className="text-gray-500 shrink-0" />
+                  <Mail size={14} className="text-[var(--sv-text-tertiary)] shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{inv.email}</p>
+                    <p className="text-sm text-[var(--sv-text-primary)] truncate">{inv.email}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-xs ${inv.state === 'pending' ? 'text-yellow-400' : inv.state === 'accepted' ? 'text-green-400' : 'text-gray-500'}`}>{inv.state}</span>
-                      <span className="text-xs text-gray-500">·</span>
-                      <span className="text-xs text-gray-500">{inv.role}</span>
+                      <Badge category="temporal" value={inv.state.toUpperCase()} size="sm" />
+                      <span className="text-xs text-[var(--sv-text-tertiary)]">{inv.role}</span>
                       {inv.expires_at && (
                         <>
-                          <span className="text-xs text-gray-500">·</span>
-                          <span className="text-xs text-gray-500 flex items-center gap-1"><Clock size={10} />{new Date(inv.expires_at).toLocaleDateString()}</span>
+                          <span className="text-xs text-[var(--sv-text-disabled)]">·</span>
+                          <span className="text-xs text-[var(--sv-text-disabled)] flex items-center gap-1"><Clock size={10} />{new Date(inv.expires_at).toLocaleDateString()}</span>
                         </>
                       )}
                     </div>
                   </div>
                   {inv.state === 'pending' && canManage && (
-                    <button onClick={() => revokeInvitation(inv.id)} className="p-1 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-400" title="Revoke">
+                    <button onClick={() => revokeInvitation(inv.id)} className="p-1 rounded hover:bg-[var(--sv-error)]/10 text-[var(--sv-text-tertiary)] hover:text-[var(--sv-error)] transition-colors" title="Revoke">
                       <X size={12} />
                     </button>
                   )}
