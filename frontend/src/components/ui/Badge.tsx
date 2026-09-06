@@ -38,7 +38,7 @@ const TEMPORAL_VARIANTS: Record<string, string> = {
 type BadgeCategory = 'status' | 'authority' | 'evidence' | 'temporal';
 
 interface BadgeProps {
-  children: ReactNode;
+  children?: ReactNode;
   category?: BadgeCategory;
   value?: string;
   variant?: string;
