@@ -39,7 +39,6 @@ test.beforeAll(async () => {
 });
 
 test.beforeEach(async ({ page }) => {
-  // Navigate to frontend first to establish proper origin, then inject auth tokens
   await page.goto(FRONTEND);
   const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
     email: authEmail, password: authPassword,
@@ -116,5 +115,130 @@ test.describe('UI Browser Certification - Authenticated', () => {
     await expect(page).toHaveURL(/\/ingest/);
     await expect(page.getByRole('heading', { name: 'Ingest' })).toBeVisible({ timeout: 5000 });
     await expect(page.locator('select')).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Search Network Contract', () => {
+  test('Search sends POST /api/v1/ingest/search with query and limit params', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/search`);
+    await expect(page).toHaveURL(/\/search/);
+    await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible({ timeout: 5000 });
+
+    let capturedReq: { method: string; url: string } | null = null;
+    page.on('request', (req) => {
+      if (req.url().includes('/api/v1/ingest/search')) {
+        capturedReq = { method: req.method(), url: req.url() };
+      }
+    });
+
+    await page.fill('input[placeholder*="Search"]', 'test query');
+    await page.click('button:has-text("Search")');
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => resolve(), 15000);
+      page.on('response', (resp) => {
+        if (resp.url().includes('/api/v1/ingest/search')) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+    });
+
+    expect(capturedReq).not.toBeNull();
+    expect(capturedReq.method).toBe('POST');
+    expect(capturedReq.url).toContain('/api/v1/ingest/search');
+    expect(capturedReq.url).toContain('query=');
+    expect(capturedReq.url).toContain('limit=');
+  });
+
+  test('Search empty query does not send request', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/search`);
+    await expect(page).toHaveURL(/\/search/);
+
+    let searchRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/ingest/search')) searchRequests++;
+    });
+
+    await page.waitForLoadState('networkidle');
+    expect(searchRequests).toBe(0);
+  });
+});
+
+test.describe('Memory Network Contract', () => {
+  test('Memory loads via GET /api/v1/memory/ with project_id param', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    let capturedReq: { method: string; url: string } | null = null;
+    page.on('request', (req) => {
+      if (req.url().includes('/api/v1/memory/')) {
+        capturedReq = { method: req.method(), url: req.url() };
+      }
+    });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/memory`);
+    await expect(page).toHaveURL(/\/memory/);
+    await expect(page.getByRole('heading', { name: /Memory|Memories/ })).toBeVisible({ timeout: 5000 });
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => resolve(), 15000);
+      page.on('response', (resp) => {
+        if (resp.url().includes('/api/v1/memory/') && resp.status() === 200) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+    });
+
+    expect(capturedReq).not.toBeNull();
+    expect(capturedReq.method).toBe('GET');
+    expect(capturedReq.url).toContain('/api/v1/memory/');
+    expect(capturedReq.url).toContain('project_id=');
+  });
+
+  test('Memory page has filter and structure', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/memory`);
+    await expect(page).toHaveURL(/\/memory/);
+    await expect(page.getByRole('heading', { name: /Memory|Memories/ })).toBeVisible({ timeout: 5000 });
+    const select = page.locator('select');
+    await expect(select).toBeVisible({ timeout: 5000 });
   });
 });

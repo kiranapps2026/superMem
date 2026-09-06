@@ -90,7 +90,7 @@ export default function MemoryPage() {
           <div key={item.id} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4 hover:border-[var(--sv-accent)]/30 transition-colors">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
-                <Badge category="evidence" value={item.memory_type.replace('_memory', '').toUpperCase()} size="sm" />
+                <Badge variant="muted" size="sm">{item.memory_type.replace('_memory', '')}</Badge>
                 <Badge category="authority" value={item.authority >= 0.8 ? 'VERIFIED' : item.authority >= 0.5 ? 'OBSERVED' : 'INFERRED'} size="sm" />
                 {item.temporal_status && <Badge category="temporal" value={item.temporal_status.toUpperCase()} size="sm" />}
               </div>
