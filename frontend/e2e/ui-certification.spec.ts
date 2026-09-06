@@ -116,6 +116,18 @@ test.describe('UI Browser Certification - Authenticated', () => {
     await expect(page.getByRole('heading', { name: 'Ingest' })).toBeVisible({ timeout: 5000 });
     await expect(page.locator('select')).toBeVisible({ timeout: 5000 });
   });
+
+  test('Facts page renders', async ({ page }) => {
+    await page.goto(`${FRONTEND}/projects/${projectId}/facts`);
+    await expect(page).toHaveURL(/\/facts/);
+    await expect(page.locator('h1:has-text("Facts")')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Decisions page renders', async ({ page }) => {
+    await page.goto(`${FRONTEND}/projects/${projectId}/decisions`);
+    await expect(page).toHaveURL(/\/decisions/);
+    await expect(page.locator('h1:has-text("Decisions")')).toBeVisible({ timeout: 5000 });
+  });
 });
 
 test.describe('Search Network Contract', () => {
@@ -240,5 +252,122 @@ test.describe('Memory Network Contract', () => {
     await expect(page.getByRole('heading', { name: /Memory|Memories/ })).toBeVisible({ timeout: 5000 });
     const select = page.locator('select');
     await expect(select).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Facts Network Contract', () => {
+  test('Facts loads via GET /api/v1/ingest/facts with project_id param', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/facts`);
+    await expect(page).toHaveURL(/\/facts/);
+    await expect(page.locator('h1:has-text("Facts")')).toBeVisible({ timeout: 5000 });
+
+    let capturedReq: { method: string; url: string } | null = null;
+    page.on('request', (req) => {
+      if (req.url().includes('/api/v1/ingest/facts')) {
+        capturedReq = { method: req.method(), url: req.url() };
+      }
+    });
+
+    // Navigate away and back to trigger a new request the listener will catch
+    await page.goto(`${FRONTEND}/projects/${projectId}/search`);
+    await page.goto(`${FRONTEND}/projects/${projectId}/facts`);
+    await expect(page).toHaveURL(/\/facts/);
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => resolve(), 15000);
+      page.on('response', (resp) => {
+        if (resp.url().includes('/api/v1/ingest/facts')) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+    });
+
+    expect(capturedReq).not.toBeNull();
+    expect(capturedReq.method).toBe('GET');
+    expect(capturedReq.url).toContain('/api/v1/ingest/facts');
+    expect(capturedReq.url).toContain('project_id=');
+  });
+
+  test('Facts page has empty state and subject-predicate-object display', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/facts`);
+    await expect(page).toHaveURL(/\/facts/);
+    await expect(page.locator('h1:has-text("Facts")')).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Decisions Network Contract', () => {
+  test('Decisions loads via GET /api/v1/ingest/decisions with project_id param', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    let capturedReq: { method: string; url: string } | null = null;
+    page.on('request', (req) => {
+      if (req.url().includes('/api/v1/ingest/decisions')) {
+        capturedReq = { method: req.method(), url: req.url() };
+      }
+    });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/decisions`);
+    await expect(page).toHaveURL(/\/decisions/);
+    await expect(page.locator('h1:has-text("Decisions")')).toBeVisible({ timeout: 5000 });
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => resolve(), 15000);
+      page.on('response', (resp) => {
+        if (resp.url().includes('/api/v1/ingest/decisions') && resp.status() === 200) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+    });
+
+    expect(capturedReq).not.toBeNull();
+    expect(capturedReq.method).toBe('GET');
+    expect(capturedReq.url).toContain('/api/v1/ingest/decisions');
+    expect(capturedReq.url).toContain('project_id=');
+  });
+
+  test('Decisions page has empty state', async ({ page }) => {
+    await page.goto(FRONTEND);
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    expect(login.status).toBe(200);
+    const { access_token, refresh_token } = login.data;
+    await page.evaluate((tokens: any) => {
+      localStorage.setItem('sv_tokens', JSON.stringify(tokens));
+    }, { access_token, refresh_token });
+
+    await page.goto(`${FRONTEND}/projects/${projectId}/decisions`);
+    await expect(page).toHaveURL(/\/decisions/);
+    await expect(page.locator('h1:has-text("Decisions")')).toBeVisible({ timeout: 5000 });
   });
 });
