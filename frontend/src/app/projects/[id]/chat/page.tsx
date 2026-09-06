@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useParams } from 'next/navigation';
-import { apiPost, getToken, streamChat } from '@/lib/api';
+import { apiPost, getToken } from '@/lib/api';
 import {
   MessageSquare, Send, User, Bot, Loader2, ArrowLeft, Sparkles,
   FileText, X, AlertCircle, RefreshCw, ChevronRight
