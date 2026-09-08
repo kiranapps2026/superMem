@@ -5,29 +5,19 @@ const FRONTEND = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 test.describe('Dashboard Page', () => {
   test('unauthenticated access redirects to login', async ({ page }) => {
     await page.goto(`${FRONTEND}/dashboard`);
-    await page.waitForTimeout(2000);
-    const onLogin = page.url().includes('/auth/login') ||
-      await page.locator('input[type="email"]').count() > 0;
-    expect(onLogin).toBeTruthy();
+    await page.waitForURL(/\/auth\/login/, { timeout: 10000 });
+    await expect(page.locator('h1')).toContainText('SwarmVault');
   });
-});
 
-test.describe('Projects Page', () => {
-  test('unauthenticated access redirects to login', async ({ page }) => {
+  test('Projects page unauthenticated access redirects', async ({ page }) => {
     await page.goto(`${FRONTEND}/projects`);
-    await page.waitForTimeout(2000);
-    const onLogin = page.url().includes('/auth/login') ||
-      await page.locator('input[type="email"]').count() > 0;
-    expect(onLogin).toBeTruthy();
+    await page.waitForURL(/\/auth\/login/, { timeout: 10000 });
+    await expect(page.locator('h1')).toContainText('SwarmVault');
   });
-});
 
-test.describe('Settings Page', () => {
-  test('unauthenticated access redirects to login', async ({ page }) => {
+  test('Settings page unauthenticated access redirects', async ({ page }) => {
     await page.goto(`${FRONTEND}/settings`);
-    await page.waitForTimeout(2000);
-    const onLogin = page.url().includes('/auth/login') ||
-      await page.locator('input[type="email"]').count() > 0;
-    expect(onLogin).toBeTruthy();
+    await page.waitForURL(/\/auth\/login/, { timeout: 10000 });
+    await expect(page.locator('h1')).toContainText('SwarmVault');
   });
 });

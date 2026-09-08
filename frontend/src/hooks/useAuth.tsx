@@ -21,30 +21,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, loading: true, error: null });
 
   useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) setState({ user: null, loading: false, error: null });
+    }, 8000);
     (async () => {
       try {
         const data = await apiGet<{ id: string; email: string; name: string | null; workspace_id: string; tenant_id: string }>('/api/v1/auth/me');
-        setState({ user: data, loading: false, error: null });
-      } catch { setState({ user: null, loading: false, error: null }); }
+        if (!cancelled) { clearTimeout(timer); setState({ user: data, loading: false, error: null }); }
+      } catch { if (!cancelled) { clearTimeout(timer); setState({ user: null, loading: false, error: null }); } }
     })();
+    return () => { cancelled = true; clearTimeout(timer); };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setState((s) => ({ ...s, loading: true, error: null }));
-    const data = await apiPost<TokenPair>('/api/v1/auth/login', { email, password });
-    storeTokens(data);
-    // Fetch user separately since TokenResponse doesn't include user
-    const user = await apiGet<UserInfo>('/api/v1/auth/me');
-    setState({ user, loading: false, error: null });
+    try {
+      const data = await apiPost<TokenPair>('/api/v1/auth/login', { email, password });
+      storeTokens(data);
+      const user = await apiGet<UserInfo>('/api/v1/auth/me');
+      setState({ user, loading: false, error: null });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setState({ user: null, loading: false, error: message });
+      throw err;
+    }
   }, []);
 
   const register = useCallback(async (data: RegisterRequest) => {
     setState((s) => ({ ...s, loading: true, error: null }));
-    const res = await apiPost<TokenPair>('/api/v1/auth/register', data);
-    storeTokens(res);
-    // Fetch user separately since TokenResponse doesn't include user
-    const user = await apiGet<UserInfo>('/api/v1/auth/me');
-    setState({ user, loading: false, error: null });
+    try {
+      const res = await apiPost<TokenPair>('/api/v1/auth/register', data);
+      storeTokens(res);
+      const user = await apiGet<UserInfo>('/api/v1/auth/me');
+      setState({ user, loading: false, error: null });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registration failed';
+      setState({ user: null, loading: false, error: message });
+      throw err;
+    }
   }, []);
 
   const logout = useCallback(async () => {
