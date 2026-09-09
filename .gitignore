@@ -26,6 +26,12 @@ storage/
 *.swp
 *.swo
 
+# Debug/test scratch files (not part of test suite)
+frontend/e2e/debug-*.ts
+frontend/e2e/test-diag*.ts
+frontend/e2e/test-helpers.ts
+frontend/e2e/global-setup.ts
+
 # OS
 Thumbs.db
 .DS_Store
