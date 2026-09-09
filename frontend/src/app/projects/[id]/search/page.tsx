@@ -127,7 +127,7 @@ export default function SearchPage() {
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[var(--sv-accent)] bg-[var(--sv-accent-subtle)] px-2 py-0.5 rounded-full font-medium">{r.item_type}</span>
-                {r.temporal_status && <Badge category="temporal" value={r.temporal_status.toUpperCase()} size="sm" />}
+                {r.temporal_status && <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[r.temporal_status.toLowerCase()] ?? r.temporal_status.toUpperCase()} size="sm" />}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[var(--sv-text-tertiary)]">{Math.round(r.score * 100)}%</span>

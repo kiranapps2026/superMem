@@ -69,7 +69,7 @@ export default function TimelinePage() {
               <div className="flex items-center gap-2 mt-1">
                 {typeIcon(ev.item_type)}
                 <span className="text-xs text-[var(--sv-text-tertiary)] uppercase font-medium">{ev.item_type}</span>
-                {ev.temporal_status && <Badge category="temporal" value={ev.temporal_status.toUpperCase()} size="sm" />}
+                {ev.temporal_status && <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[ev.temporal_status.toLowerCase()] ?? ev.temporal_status.toUpperCase()} size="sm" />}
               </div>
               <p className="text-sm text-[var(--sv-text-secondary)] mt-1.5 leading-relaxed">{ev.title || ev.content}</p>
             </div>

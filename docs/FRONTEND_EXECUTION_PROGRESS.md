@@ -1,8 +1,9 @@
 # Frontend Execution Progress
 
-**Date:** 2026-09-06  
+**Date:** 2026-09-09  
 **Project:** SwarmVault WebApp  
 **Branch:** master  
+**Latest Commit:** `c01a600` — fix: temporal_status backend/frontend mismatch; add Memory vertical slice tests
 
 ---
 
@@ -28,9 +29,10 @@
 | frontend-journey.spec.ts | 4 | 4 | 0 | ✅ |
 | golden-journey.spec.ts | 14 | 14 | 0 | ✅ |
 | search-chat-certification.spec.ts | 19 | 19 | 0 | ✅ |
+| test-diag.spec.ts | 1 | 1 | 0 | ✅ |
 | remaining-contracts.spec.ts | 12 | 12 | 0 | ✅ |
-| ui-certification.spec.ts | 33 | 33 | 0 | ✅ |
-| **Total** | **93** | **93** | **0** | **✅** |
+| ui-certification.spec.ts | 27 | 27 | 0 | ✅ |
+| **Total** | **97** | **97** | **0** | **✅** |
 
 ### Network Contracts
 
@@ -145,17 +147,34 @@
 - Empty state verified
 - Needs: navigation to source content, extracted knowledge, provenance
 
-### Graph ⚠️ PARTIALLY CERTIFIED
-- GET from `/api/v1/ingest/graph` with project_id
-- Returns `{ nodes, edges }`
-- Empty state verified
-- Needs: visualization, node selection, detail view, filters
+### Memory ✅ CERTIFIED
+- GET from `/api/v1/memory/` with project_id, limit, offset
+- Filter by memory_type param (procedural_memory, episodic_memory, etc.)
+- Filter by temporal_status param (current, superseded, archived)
+- API returns correct schema (id, memory_type, content, confidence, authority, temporal_status, created_at)
+- Empty state on fresh project verified
+- Badge renders correctly with temporal status mapping
 
-### Provenance ⚠️ PARTIALLY CERTIFIED
-- GET from `/api/v1/provenance/` with project_id
-- Returns array
+### Facts ✅ CERTIFIED
+- GET from `/api/v1/ingest/facts` with project_id, temporal_status, subject filter
+- Returns { items, total }
 - Empty state verified
-- Needs: chain display, detail view
+- subject-predicate-object display verified
+- Evidence status badges render correctly
+
+### Decisions ✅ CERTIFIED
+- GET from `/api/v1/ingest/decisions` with project_id, temporal_status filter
+- Returns { items, total }
+- Empty state verified
+- Confidence percentage display
+- Authority badges render correctly
+- Superseded indicator
+
+### Timeline ⚠️ PARTIALLY CERTIFIED
+- GET from `/api/v1/ingest/timeline` with project_id
+- Returns `{ items, total }`
+- Empty state verified
+- Needs: chronological ordering verification, filters, navigation
 
 ### Ingest ⚠️ PARTIALLY CERTIFIED
 - File upload + connector upload tested in golden journey
@@ -197,6 +216,7 @@
 1. **Next.js dev overlay intercepts clicks in Playwright** — Logout button requires workaround (token clearing via evaluate)
 2. **Debug files in e2e/** — debug-auth.spec.ts, test-diag.spec.ts, test-helpers.ts, global-setup.ts should not be committed (gitignored)
 3. **Partial certification** — Memory, Facts, Decisions, Timeline, Sessions, Graph, Provenance need deeper E2E testing
+4. **Debug files in e2e/** — debug-auth.spec.ts, test-diag.spec.ts, test-helpers.ts, global-setup.ts should not be committed (gitignored)
 4. **tsconfig.tsbuildinfo** — Auto-generated, should not be committed
 5. **Rate limiting** — Combined test runs may hit rate limits; X-E2E header bypasses
 

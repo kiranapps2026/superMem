@@ -117,7 +117,7 @@ export default function GraphPage() {
                     <p className="text-sm font-medium text-[var(--sv-text-primary)] flex-1 truncate">{node.label}</p>
                     <Badge category="status" value={node.node_type} size="sm" />
                     {node.temporal_status !== 'current' && (
-                      <Badge category="temporal" value={node.temporal_status.toUpperCase()} size="sm" />
+                      <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[node.temporal_status.toLowerCase()] ?? node.temporal_status.toUpperCase()} size="sm" />
                     )}
                   </div>
                   {isSelected && neighbors.length > 0 && (
@@ -150,7 +150,7 @@ export default function GraphPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[var(--sv-text-tertiary)]">Status</span>
-                    <Badge category="temporal" value={selectedNode.temporal_status.toUpperCase()} size="sm" />
+                    <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[selectedNode.temporal_status.toLowerCase()] ?? selectedNode.temporal_status.toUpperCase()} size="sm" />
                   </div>
                   {selectedNode.properties && Object.keys(selectedNode.properties).length > 0 && (
                     <Collapsible label="Properties" defaultOpen={false}>
