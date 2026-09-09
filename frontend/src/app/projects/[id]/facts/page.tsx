@@ -67,7 +67,7 @@ export default function FactsPage() {
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Badge category="evidence" value={f.source_id ? 'PROVEN' : 'INGESTED'} size="sm" />
-              {f.temporal_status && <Badge category="temporal" value={f.temporal_status.toUpperCase()} size="sm" />}
+              {f.temporal_status && <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[f.temporal_status.toLowerCase()] ?? f.temporal_status.toUpperCase()} size="sm" />}
               <span className="text-xs text-[var(--sv-text-disabled)]">{new Date(f.created_at).toLocaleString()}</span>
             </div>
             <p className="text-xs text-[var(--sv-text-tertiary)] mt-2 font-mono">{f.subject} → {f.predicate} → {f.object}</p>

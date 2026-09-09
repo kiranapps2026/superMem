@@ -197,6 +197,69 @@ test.describe('Memory Network Contract', () => {
     const select = page.locator('select');
     await expect(select).toBeVisible({ timeout: 10000 });
   });
+
+  test('Memory vertical slice — API returns correct schema with project_id', async () => {
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    const res = await apiRequest('GET', `/api/v1/memory/?project_id=${encodeURIComponent(projectId)}&limit=20&offset=0`, login.data.access_token);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.data)).toBe(true);
+    if (res.data.length > 0) {
+      const m = res.data[0];
+      expect(m).toHaveProperty('id');
+      expect(m).toHaveProperty('memory_type');
+      expect(m).toHaveProperty('content');
+      expect(m).toHaveProperty('confidence');
+      expect(m).toHaveProperty('authority');
+      expect(m).toHaveProperty('temporal_status');
+      expect(m).toHaveProperty('created_at');
+    }
+  });
+
+  test('Memory vertical slice — filter by memory_type param', async () => {
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    const res = await apiRequest('GET', `/api/v1/memory/?project_id=${encodeURIComponent(projectId)}&memory_type=procedural_memory&limit=20`, login.data.access_token);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.data)).toBe(true);
+  });
+
+  test('Memory vertical slice — filter by temporal_status param', async () => {
+    const login = await apiRequest('POST', '/api/v1/auth/login', undefined, {
+      email: authEmail, password: authPassword,
+    });
+    const res = await apiRequest('GET', `/api/v1/memory/?project_id=${encodeURIComponent(projectId)}&temporal_status=current&limit=20`, login.data.access_token);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.data)).toBe(true);
+    res.data.forEach((m: any) => {
+      expect(m.temporal_status.toLowerCase()).toBe('current');
+    });
+  });
+
+  test('Memory vertical slice — page renders empty state on fresh project', async ({ page }) => {
+    // Create a new project with no memory
+    const reg = await apiRequest('POST', '/api/v1/auth/register', undefined, {
+      email: `mem-empty-${uid()}@test.com`, password: 'CertPass123!', name: 'Empty Test',
+      workspace_name: `Empty-WS-${uid()}`,
+      password_confirm: 'CertPass123!',
+    });
+    expect(reg.status).toBe(201);
+    const proj = await apiRequest('POST', '/api/v1/projects', reg.data.access_token, {
+      name: `Empty-Mem-Project-${uid()}`,
+    });
+    expect(proj.status).toBe(201);
+    await page.goto(FRONTEND);
+    await page.evaluate((t: any) => localStorage.setItem('sv_tokens', JSON.stringify(t)), {
+      access_token: reg.data.access_token, refresh_token: reg.data.refresh_token,
+    });
+    await page.goto(`${FRONTEND}/projects/${proj.data.id}/memory`);
+    await expect(page).toHaveURL(/\/memory/);
+    await expect(page.locator('h1:has-text("Memory")')).toBeVisible({ timeout: 10000 });
+    // Empty state should appear
+    await expect(page.locator('text="No memory yet"')).toBeVisible({ timeout: 10000 });
+  });
 });
 
 // ── Facts Network Contract ───────────────────────────────────────────────

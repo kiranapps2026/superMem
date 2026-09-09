@@ -40,6 +40,8 @@ export default function MemoryPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const tagsFor = (item: MemoryItemOut): string[] => (item.extra_metadata?.tags as string[]) || [];
+  // Backend stores lowercase temporal_status; Badge expects ACTIVE/SUPERSEDED/ARCHIVED
+  const temporalLabel = (s: string) => ({ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[s.toLowerCase()] ?? s.toUpperCase());
 
   if (!user) {
     return <div className="flex items-center justify-center h-full"><p className="text-sm text-[var(--sv-text-tertiary)]">Sign in to view memory.</p></div>;
@@ -92,7 +94,7 @@ export default function MemoryPage() {
               <div className="flex items-center gap-2">
                 <Badge variant="muted" size="sm">{item.memory_type.replace('_memory', '')}</Badge>
                 <Badge category="authority" value={item.authority >= 0.8 ? 'VERIFIED' : item.authority >= 0.5 ? 'OBSERVED' : 'INFERRED'} size="sm" />
-                {item.temporal_status && <Badge category="temporal" value={item.temporal_status.toUpperCase()} size="sm" />}
+                {item.temporal_status && <Badge category="temporal" value={temporalLabel(item.temporal_status)} size="sm" />}
               </div>
               <span className="text-xs text-[var(--sv-text-disabled)]">{new Date(item.created_at).toLocaleString()}</span>
             </div>

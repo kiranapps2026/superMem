@@ -67,7 +67,7 @@ export default function DecisionsPage() {
             </div>
             {d.context && <p className="text-xs text-[var(--sv-text-tertiary)] mt-1.5 italic">{d.context}</p>}
             <div className="flex items-center gap-2 mt-2">
-              <Badge category="temporal" value={d.temporal_status.toUpperCase()} size="sm" />
+              <Badge category="temporal" value={{ current: 'ACTIVE', superseded: 'SUPERSEDED', archived: 'ARCHIVED' }[d.temporal_status.toLowerCase()] ?? d.temporal_status.toUpperCase()} size="sm" />
               <Badge category="authority" value={d.authority >= 0.8 ? 'VERIFIED' : d.authority >= 0.5 ? 'OBSERVED' : 'INFERRED'} size="sm" />
               {d.superseded_by_id && <span className="text-xs text-[var(--sv-warning)]">Superseded</span>}
               <span className="text-xs text-[var(--sv-text-disabled)]">{new Date(d.created_at).toLocaleString()}</span>
