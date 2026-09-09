@@ -52,7 +52,7 @@ export default function SessionsPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-[var(--sv-text-primary)]">Sessions</h1>
-        <p className="text-sm text-[var(--sv-text-tertiary)] mt-1">{sessions.length} sessions in this project</p>
+        <p className="text-sm text-[var(--sv-text-tertiary)] mt-1">{sessions.length} sessions in this workspace</p>
       </div>
 
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}

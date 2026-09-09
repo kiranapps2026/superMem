@@ -57,9 +57,6 @@ export default function ProvenancePage() {
 
       <div className="space-y-2">
         {records.map((r) => {
-          const confidenceLevel = r.confidence != null
-            ? (r.confidence >= 0.7 ? 'success' : r.confidence >= 0.4 ? 'warning' : 'danger')
-            : null;
           return (
             <div key={r.id} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4 hover:border-[var(--sv-accent)]/30 transition-colors">
               <div className="flex items-center justify-between mb-2">
@@ -75,7 +72,7 @@ export default function ProvenancePage() {
                 <span className="flex items-center gap-1"><Clock size={12} />{r.latency_ms}ms</span>
                 <span>Tokens: {r.total_tokens}</span>
                 <span>Method: {r.retrieval_method}</span>
-                {r.confidence != null && <Badge category="authority" value={confidenceLevel === 'success' ? 'VERIFIED' : confidenceLevel === 'warning' ? 'INFERRED' : 'OBSERVED'} size="sm" />}
+                {r.confidence != null && <span title="Confidence score from retrieval (0-1)">Confidence: {(r.confidence * 100).toFixed(0)}%</span>}
               </div>
 
               {r.memory_ids_used && r.memory_ids_used.length > 0 && (
