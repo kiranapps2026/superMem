@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     llm_retry_backoff: float = 1.0
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    deepseek_api_key: str = ""
 
     # SwarmVault
     swarmvault_url: str = "http://localhost:8000"

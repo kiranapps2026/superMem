@@ -141,6 +141,58 @@ class OpenAIProvider(LLMProvider):
         await self._client.close()
 
 
+class DeepSeekProvider(LLMProvider):
+    name = "deepseek"
+
+    def __init__(self, api_key: str) -> None:
+        from openai import AsyncOpenAI
+        self._client = AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com/v1",
+        )
+
+    async def chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+        stream: bool = False,
+    ) -> dict[str, Any] | AsyncIterator[str]:
+        if stream:
+            return self._stream(messages, model, max_tokens, temperature)
+
+        response = await self._client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        return _openai_to_dict(response)
+
+    async def _stream(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> AsyncIterator[str]:
+        stream = await self._client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream=True,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield delta
+
+    async def aclose(self) -> None:
+        await self._client.close()
+
+
 class MockProvider(LLMProvider):
     name = "mock"
 
@@ -241,6 +293,8 @@ def get_llm_provider() -> LLMProvider:
         return _with_timeout_and_retry(AnthropicProvider(settings.anthropic_api_key))
     if provider_name == "openai" and settings.openai_api_key:
         return _with_timeout_and_retry(OpenAIProvider(settings.openai_api_key))
+    if provider_name == "deepseek" and settings.deepseek_api_key:
+        return _with_timeout_and_retry(DeepSeekProvider(settings.deepseek_api_key))
 
     return MockProvider()
 
