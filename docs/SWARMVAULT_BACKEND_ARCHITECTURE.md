@@ -1,1155 +1,750 @@
-# SwarmVault Backend Runtime Architecture
+# SwarmVault Backend Architecture Manifest
 
-**Document Type**: Forensic reconciliation – documentation only, no code changes
-**Baseline SHA**: `e6f4b1c157afaed052584963b942ea04f9661610`
-**Date**: 2026-09-10
-**Agent**: Agent 1 – BACKEND RUNTIME ARCHITECTURE
+**Version:** 1.0.0
+**Date:** 2026-09-24
+**Branch:** recovery/restore-2026-09-24
+**Authority:** Source code is the single source of truth. This document is authoritative only when it matches source.
 
 ---
 
 ## Table of Contents
 
-1. [Application Startup](#1-application-startup)
-2. [Router Inventory](#2-router-inventory)
-3. [Service Inventory](#3-service-inventory)
-4. [SQLAlchemy Models](#4-sqlalchemy-models)
-5. [Middleware Stack](#5-middleware-stack)
-6. [Configuration](#6-configuration)
-7. [Dependency Injection](#7-dependency-injection)
-8. [Authentication](#8-authentication)
-9. [Authorization (RBAC)](#9-authorization-rbac)
-10. [Tenancy](#10-tenancy)
-11. [Database Access](#11-database-access)
-12. [Background Processing](#12-background-processing)
-13. [External Providers](#13-external-providers)
-14. [Error Handling](#14-error-handling)
-15. [Logging](#15-logging)
-16. [Observability](#16-observability)
-17. [Health/Readiness](#17-healthreadiness)
-18. [Runtime Dependencies](#18-runtime-dependencies)
-19. [Representative Request Traces](#19-representative-request-traces)
+1. [System Architecture](#1-system-architecture)
+2. [Application Bootstrap](#2-application-bootstrap)
+3. [Database Layer](#3-database-layer)
+4. [LLM Provider Abstraction](#4-llm-provider-abstraction)
+5. [Ingestion Pipeline (M0-M5)](#5-ingestion-pipeline-m0-m5)
+6. [Middleware Stack](#6-middleware-stack)
+7. [Tenancy & Isolation](#7-tenancy--isolation)
+8. [Security & Authentication](#8-security--authentication)
+9. [Configuration Management](#9-configuration-management)
+10. [Observability & Audit](#10-observability--audit)
+11. [Service Layer Map](#11-service-layer-map)
+12. [Data Flow Diagrams](#12-data-flow-diagrams)
+13. [API Contract](#13-api-contract)
 
 ---
 
-## 1. Application Startup
-
-### 1.1 FastAPI App Construction (`app/main.py`)
-
-The application is built as a standard FastAPI app. Key construction points:
-
-- **App instance** is created with title/description metadata.
-- **CORS middleware** is applied first via `CORSMiddleware`, reading allowed origins from configuration (`settings.cors_origins`). This is the only `add_middleware` call; all other middleware uses the decorator/factory pattern described below.
-- **Router registration**: Multiple routers are included with distinct URL prefixes.
-- **Lifespan handler** manages startup/shutdown. Startup initializes:
-  - Database engine and session factory (`app/db.py`)
-  - Object storage backend (`services/object_storage.py`)
-  - LLM provider singleton (`services/llm.py`)
-  - Memory service (`services/memory.py`)
-  - Audit service (`services/audit/service.py`)
-  - Policy engine (`services/policy/engine.py`)
-  - Graph/repository singletons
-- **Exception handlers** are registered for:
-  - `RequestValidationError` (Pydantic validation failures)
-  - Generic `Exception` (fail-closed catch-all)
-  - `HTTPException` (standard FastAPI HTTP errors)
-
-### 1.2 Middleware Stack Order
-
-The middleware stack (outermost to innermost):
-
-1. `SecurityHeadersMiddleware` – injects security headers on every response
-2. `RequestIdMiddleware` – generates/propagates `X-Request-ID`
-3. `AuditPersistenceMiddleware` – logs request/response pairs for audit trail
-4. `RateLimitMiddleware` – per-key sliding-window rate limiting
-5. *(inner) FastAPI routing + CORSMiddleware*
-
-Each middleware is applied using the `@app.middleware("http")` decorator pattern in their respective module files.
-
-### 1.3 Lifespan Flow
+## 1. System Architecture
 
 ```
-startup:
-  ├── init_engine()        → create_async_engine(settings.database_url)
-  ├── init_session_factory() → async_sessionmaker(bind=engine)
-  ├── init_storage()       → ObjectStorageFactory.create()
-  ├── init_llm()           → LLMProviderFactory.create()
-  ├── init_memory()        → MemoryService(...)
-  ├── init_audit()         → AuditService(...)
-  └── init_policy()        → PolicyEngine(...)
-
-shutdown:
-  ├── dispose engine
-  └── close storage client
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            SwarmVault Backend                                │
+│                                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────────┐  │
+│  │   FastAPI    │───▶│  Middleware  │───▶│          Router Layer        │  │
+│  │   App        │    │   Stack       │    │  (14 routers, 81 endpoints)  │  │
+│  └──────────────┘    └──────────────┘    └──────────────────────────────┘  │
+│         │                    │                       │                     │
+│         │                    │                       ▼                     │
+│         │                    │              ┌────────────────────┐        │
+│         │                    │              │  Service Layer     │        │
+│         │                    │              │  (14 services)     │        │
+│         │                    │              └────────────────────┘        │
+│         │                    │                       │                     │
+│         │                    │                       ▼                     │
+│         │                    │              ┌────────────────────┐        │
+│         │                    │              │  Repository Layer  │        │
+│         │                    │              │  (SQLAlchemy ORM)  │        │
+│         │                    │              └────────────────────┘        │
+│         │                    │                       │                     │
+│         └────────────────────┴───────────────────────┘                     │
+│                              │                                             │
+│                              ▼                                             │
+│                   ┌────────────────────┐                                   │
+│                   │   PostgreSQL DB    │                                   │
+│                   │  (23 tables)       │                                   │
+│                   └────────────────────┘                                   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                         LLM Providers                                  │  │
+│  │   Anthropic │ OpenAI │ DeepSeek │ Mock (fallback)                      │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                      Object Storage                                     │  │
+│  │   Filesystem (default) │ MinIO │ S3                                     │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### 1.1 Framework & Runtime
 
-## 2. Router Inventory
-
-All routers live under `app/api/`. Each is an `APIRouter` with prefix, tags, and dependencies.
-
-| Router File | Prefix | Tags | Key Dependencies |
+| Component | Technology | Version | Source File |
 |---|---|---|---|
-| `auth.py` | `/api/v1/auth` | `auth` | – |
-| `workspace.py` | `/api/v1/workspace` | `workspace` | `get_tenant_context` |
-| `projects.py` | `/api/v1/projects` | `projects` | `get_tenant_context` |
-| `sessions.py` | `/api/v1/sessions` | `sessions` | `get_tenant_context` |
-| `chat.py` | `/api/v1/chat` | `chat` | `get_tenant_context`, `get_memory_service` |
-| `memory.py` | `/api/v1/memory` | `memory` | `get_tenant_context` |
-| `ingest.py` | `/api/v1/ingest` | `ingest` | `get_tenant_context` |
-| `provenance.py` | `/api/v1/provenance` | `provenance` | `get_tenant_context` |
-| `api_keys.py` | `/api/v1/api-keys` | `api-keys` | `get_tenant_context` |
-| `policy.py` | `/api/v1/policy` | `policy` | `get_tenant_context` |
-| `audit.py` | `/api/v1/audit` | `audit` | `get_tenant_context` |
-| `storage.py` | `/api/v1/storage` | `storage` | `get_tenant_context` |
-| `dashboard.py` | `/api/v1/dashboard` | `dashboard` | `get_tenant_context` |
-| `feedback.py` | `/api/v1/feedback` | `feedback` | `get_tenant_context` |
+| Web Framework | FastAPI | Latest | app/main.py:1 |
+| ASGI Server | uvicorn | — | .env |
+| ORM | SQLAlchemy 2.0 (async) | — | app/db.py:5 |
+| Database | PostgreSQL + asyncpg | — | app/db.py:9 |
+| Migrations | Alembic | 12 migrations | alembic/versions/ |
+| Auth | JWT (python-jose) | HS256 | app/core/security.py |
+| LLM SDK | anthropic, openai | — | app/services/llm.py |
+| Settings | pydantic-settings | — | app/core/config.py |
+| Object Storage | boto3 (S3/MinIO) | — | app/services/object_storage.py |
+| Testing | pytest + Playwright | — | tests/, frontend/e2e/ |
 
-### 2.1 Auth Router (`app/api/auth.py`)
+### 1.2 Layer Responsibilities
 
-- `POST /register` – creates User + Workspace, returns tokens
-- `POST /login` – validates credentials, returns access + refresh JWT
-- `POST /refresh` – rotates refresh token, returns new access token
-- `POST /logout` – revokes refresh token
-- `POST /forgot-password` – initiates password reset flow
-- `POST /reset-password` – completes password reset via token
-- `GET /me` – returns current user profile
-
-Schemas used: `UserRegister`, `UserLogin`, `TokenResponse`, `PasswordReset`, `UserResponse`
-
-### 2.2 Workspace Router (`app/api/workspace.py`)
-
-- `GET /` – list user's workspaces
-- `POST /` – create workspace
-- `GET /{workspace_id}` – get workspace detail
-- `PUT /{workspace_id}` – update workspace
-- `DELETE /{workspace_id}` – soft-delete workspace
-- `POST /{workspace_id}/invite` – invite user by email
-- `POST /{workspace_id}/members/{user_id}/role` – change member role
-- `DELETE /{workspace_id}/members/{user_id}` – remove member
-
-Schemas used: `WorkspaceCreate`, `WorkspaceResponse`, `WorkspaceUpdate`, `InvitationCreate`, `MemberRoleUpdate`
-
-### 2.3 Projects Router (`app/api/projects.py`)
-
-- `GET /` – list projects in workspace
-- `POST /` – create project
-- `GET /{project_id}` – get project detail
-- `PUT /{project_id}` – update project
-- `DELETE /{project_id}` – delete project
-- `GET /{project_id}/stats` – project statistics
-
-Schemas used: `ProjectCreate`, `ProjectResponse`, `ProjectUpdate`
-
-### 2.4 Sessions Router (`app/api/sessions.py`)
-
-- `GET /` – list sessions in project
-- `POST /` – create session
-- `GET /{session_id}` – get session with messages
-- `PUT /{session_id}` – update session metadata
-- `DELETE /{session_id}` – delete session
-- `POST /{session_id}/messages` – add message to session
-
-Schemas used: `SessionCreate`, `SessionResponse`, `MessageCreate`, `MessageResponse`
-
-### 2.5 Chat Router (`app/api/chat.py`)
-
-- `POST /completions` – streaming chat completion with memory retrieval
-- `POST /completions/stream` – SSE streaming endpoint
-- `POST /memory/search` – semantic memory search
-- `POST /memory/ingest` – trigger memory ingestion
-
-Schemas used: `ChatRequest`, `ChatResponse`, `StreamingChatRequest`, `MemorySearchRequest`
-
-### 2.6 Memory Router (`app/api/memory.py`)
-
-- `GET /` – list memories
-- `POST /` – create/upsert memory
-- `GET /{memory_id}` – get memory detail
-- `PUT /{memory_id}` – update memory
-- `DELETE /{memory_id}` – delete memory
-- `GET /entities` – list extracted entities
-- `GET /relations` – list relations between entities
-
-Schemas used: `MemoryCreate`, `MemoryResponse`, `MemoryUpdate`, `EntityResponse`, `RelationResponse`
-
-### 2.7 Ingest Router (`app/api/ingest.py`)
-
-- `POST /` – submit ingestion job
-- `GET /` – list ingestion jobs
-- `GET /{job_id}` – get job status
-- `POST /{job_id}/cancel` – cancel running job
-- `POST /{job_id}/retry` – retry failed job
-
-Schemas used: `IngestRequest`, `IngestJobResponse`, `IngestJobStatus`
-
-### 2.8 Provenance Router (`app/api/provenance.py`)
-
-- `GET /sources/{source_id}/provenance` – full provenance chain for a source
-- `GET /messages/{message_id}/provenance` – provenance for a message
-- `GET /nodes/{node_id}/ancestors` – graph ancestors
-- `GET /nodes/{node_id}/descendants` – graph descendants
-
-Schemas used: `ProvenanceChainResponse`, `ProvenanceNodeResponse`
-
-### 2.9 API Keys Router (`app/api/api_keys.py`)
-
-- `GET /` – list API keys
-- `POST /` – create API key (returns key once)
-- `GET /{key_id}` – get key metadata (no secret)
-- `PUT /{key_id}` – update key permissions
-- `DELETE /{key_id}` – revoke key
-
-Schemas used: `ApiKeyCreate`, `ApiKeyResponse`, `ApiKeyUpdate`
-
-### 2.10 Policy Router (`app/api/policy.py`)
-
-- `GET /` – list policies
-- `POST /` – create policy version
-- `GET /{policy_id}` – get policy detail
-- `POST /{policy_id}/activate` – activate a version
-- `GET /{policy_id}/versions` – list versions
-
-Schemas used: `PolicyCreate`, `PolicyResponse`, `PolicyVersionResponse`
-
-### 2.11 Audit Router (`app/api/audit.py`)
-
-- `GET /` – list audit events (paginated, filtered)
-- `GET /{event_id}` – get event detail
-- `GET /export` – export audit log (CSV/JSON)
-- `GET /stats` – audit event statistics
-
-Schemas used: `AuditEventResponse`, `AuditEventFilter`, `AuditExportRequest`
-
-### 2.12 Storage Router (`app/api/storage.py`)
-
-- `POST /upload` – upload file (multipart)
-- `GET /download/{file_id}` – download file
-- `DELETE /{file_id}` – delete file
-- `GET /` – list files
-
-Schemas used: `StorageUploadResponse`, `StorageFileResponse`
-
-### 2.13 Dashboard Router (`app/api/dashboard.py`)
-
-- `GET /` – dashboard overview stats
-- `GET /projects` – project activity summary
-- `GET /memory` – memory health metrics
-- `GET /usage` – API usage metrics
-
-Schemas used: `DashboardOverview`, `ProjectActivitySummary`, `MemoryHealthMetrics`
-
-### 2.14 Feedback Router (`app/api/feedback.py`)
-
-- `POST /` – submit feedback on a message
-- `GET /` – list feedback
-- `PUT /{feedback_id}` – update feedback
-- `DELETE /{feedback_id}` – delete feedback
-
-Schemas used: `FeedbackCreate`, `FeedbackResponse`, `FeedbackUpdate`
+| Layer | Responsibility | Source |
+|---|---|---|
+| **Middleware** | Request pre/post processing | app/main.py:22-228 |
+| **Routers** | HTTP endpoint definitions | app/api/*.py |
+| **Services** | Business logic orchestration | app/services/*.py |
+| **Repositories** | Database access (SQLAlchemy) | app/models.py |
+| **Schemas** | Pydantic validation | app/schemas.py |
 
 ---
 
-## 3. Service Inventory
-
-All services live under `app/services/`. Each is a class with explicit public methods.
-
-### 3.1 Pipeline Orchestration (`app/services/pipeline.py`)
-
-**Responsibility**: Coordinates the M0–M5 processing pipeline for raw data.
-
-**Public interface**:
-- `process_source(source_id: str) -> PipelineResult` – runs the full M0–M5 pipeline on a source
-- `process_batch(source_ids: list[str]) -> list[PipelineResult]` – batch processing
-
-**Pipeline stages**:
-- **M0** – normalization (connectors → normalized messages)
-- **M1** – session clustering (group messages into sessions)
-- **M2** – fact extraction (extract structured facts)
-- **M3** – temporal reasoning (timeline construction)
-- **M4** – graph construction (entity/relation graph)
-- **M5** – retrieval index building (vector + BM25 index)
-
-Each stage is delegated to a dedicated service module.
-
-### 3.2 Connectors / M0 Normalization (`app/services/connectors.py`)
-
-**Responsibility**: Normalizes raw data from various connectors into `NormalizedMessage` format.
-
-**Public interface**:
-- `normalize(source_id: str, raw_data: bytes) -> list[NormalizedMessage]`
-- `get_supported_connectors() -> list[str]`
-
-**Supported connectors**:
-- Slack export
-- Notion export
-- Confluence export
-- CSV/JSON generic
-- Markdown files
-
-### 3.3 M1 Session Service (`app/services/m1_session.py`)
-
-**Responsibility**: Clusters normalized messages into sessions using temporal proximity + content similarity.
-
-**Public interface**:
-- `cluster_messages(project_id: str, messages: list[NormalizedMessage]) -> list[Session]`
-
-### 3.4 M2 Facts Service (`app/services/m2_facts.py`)
-
-**Responsibility**: Extracts structured facts from session messages using LLM.
-
-**Public interface**:
-- `extract_facts(session_id: str, messages: list[Message]) -> list[Fact]`
-
-### 3.5 M3 Temporal Service (`app/services/m3_temporal.py`)
-
-**Responsibility**: Builds temporal timelines from facts, resolving timestamps and ordering.
-
-**Public interface**:
-- `build_timeline(project_id: str, facts: list[Fact]) -> Timeline`
-
-### 3.6 M4 Graph Service (`app/services/m4_graph.py`)
-
-**Responsibility**: Constructs entity-relation graph from facts and decisions.
-
-**Public interface**:
-- `build_graph(project_id: str, facts: list[Fact], decisions: list[Decision]) -> Graph`
-
-### 3.7 M5 Retrieval Service (`app/services/m5_retrieval.py`)
-
-**Responsibility**: Builds hybrid retrieval index (vector + BM25) from graph content.
-
-**Public interface**:
-- `build_index(project_id: str, graph: Graph) -> RetrievalIndex`
-
-### 3.8 Hybrid Retrieval (`app/services/retrieval.py`)
-
-**Responsibility**: Performs hybrid semantic + keyword search over the retrieval index.
-
-**Public interface**:
-- `search(project_id: str, query: str, top_k: int = 10) -> list[RetrievalResult]`
-- `search_with_rerank(project_id: str, query: str, top_k: int = 10) -> list[RetrievalResult]`
-
-**Strategy**: Reciprocal Rank Fusion (RRF) combining vector search and BM25 results.
-
-### 3.9 Memory Service (`app/services/memory.py`)
-
-**Responsibility**: Manages memory entity lifecycle – CRUD, entity resolution, relation management.
-
-**Public interface**:
-- `create_memory(project_id: str, data: MemoryCreate) -> Memory`
-- `get_memory(memory_id: str) -> Memory`
-- `update_memory(memory_id: str, data: MemoryUpdate) -> Memory`
-- `delete_memory(memory_id: str) -> None`
-- `search_memories(project_id: str, query: str) -> list[Memory]`
-- `get_entities(project_id: str) -> list[Entity]`
-- `get_relations(project_id: str) -> list[Relation]`
-
-### 3.10 Chat Orchestrator (`app/services/chat_orchestrator.py`)
-
-**Responsibility**: Orchestrates chat completions with memory retrieval, context assembly, and LLM dispatch.
-
-**Public interface**:
-- `complete(request: ChatRequest) -> ChatResponse`
-- `stream(request: StreamingChatRequest) -> AsyncGenerator[str, None]`
-
-**Flow**:
-1. Retrieve relevant memories via `RetrievalService`
-2. Assemble context from retrieved memories + conversation history
-3. Dispatch to LLM provider via `LLMProvider`
-4. Post-process: extract facts, update memory, log feedback
-
-### 3.11 LLM Provider (`app/services/llm.py`)
-
-**Responsibility**: Abstracts LLM provider interactions (Anthropic, OpenAI, local).
-
-**Public interface**:
-- `complete(messages: list[Message], **kwargs) -> LLMResponse`
-- `stream(messages: list[Message], **kwargs) -> AsyncGenerator[str, None]`
-- `embed(text: str) -> list[float]`
-
-**Provider selection**: Configured via `settings.llm_provider`. Falls back to configured default.
-
-### 3.12 Audit Service (`app/services/audit/service.py`)
-
-**Responsibility**: Records and queries audit events for compliance.
-
-**Public interface**:
-- `record_event(event: AuditEventCreate) -> AuditEvent`
-- `query_events(filter: AuditEventFilter) -> PaginatedResult[AuditEvent]`
-- `export_events(filter: AuditEventFilter, format: str) -> bytes`
-
-### 3.13 Audit Repository (`app/services/audit/repository.py`)
-
-**Responsibility**: Data access layer for `AuditEvent` model.
-
-**Public interface**:
-- `create(event_data: dict) -> AuditEvent`
-- `query(filters: dict, limit: int, offset: int) -> tuple[list[AuditEvent], int]`
-- `export(filters: dict, format: str) -> bytes`
-
-### 3.14 Audit Constants (`app/services/audit/constants.py`)
-
-Defines the audit event taxonomy:
-- **Event categories**: auth, data_access, data_modification, admin, system
-- **Event actions**: create, read, update, delete, login, logout, invite, etc.
-- **Severity levels**: info, warning, error, critical
-
-### 3.15 Policy Engine (`app/services/policy/engine.py`)
-
-**Responsibility**: Evaluates access control policies at request time.
-
-**Public interface**:
-- `evaluate(request: PolicyRequest) -> PolicyDecision`
-- `get_active_policy(policy_type: str) -> Policy | None`
-
-### 3.16 Policy Evaluator (`app/services/policy/evaluator.py`)
-
-**Responsibility**: Core policy evaluation logic (ABAC/RBAC hybrid).
-
-**Public interface**:
-- `evaluate_rule(rule: PolicyRule, context: PolicyContext) -> bool`
-- `evaluate_policy(policy: Policy, context: PolicyContext) -> PolicyDecision`
-
-### 3.17 Policy Dependencies (`app/services/policy/dependencies.py`)
-
-**Responsibility**: FastAPI dependency factory for policy enforcement.
-
-**Public interface**:
-- `require_policy(policy_type: str) -> Callable` – returns a FastAPI dependency
-
-### 3.18 Policy Repository (`app/services/policy/repository.py`)
-
-**Responsibility**: Data access layer for `Policy` and `PolicyVersion` models.
-
-**Public interface**:
-- `create_policy(data: PolicyCreate) -> Policy`
-- `get_active_policy(policy_type: str) -> Policy | None`
-- `create_version(policy_id: str, data: dict) -> PolicyVersion`
-- `activate_version(policy_id: str, version_id: str) -> None`
-
-### 3.19 Object Storage (`app/services/object_storage.py`)
-
-**Responsibility**: Abstracts object storage operations (upload, download, delete, list).
-
-**Public interface**:
-- `upload(file: UploadFile, key: str) -> StorageObject`
-- `download(key: str) -> bytes`
-- `delete(key: str) -> None`
-- `list(prefix: str) -> list[StorageObject]`
-- `get_presigned_url(key: str, expires_in: int) -> str`
-
-**Backends**:
-- S3 (`object_storage_s3.py`) – AWS S3 / S3-compatible
-- MinIO (`object_storage_minio.py`) – self-hosted MinIO
-
-### 3.20 Tool Definitions (`app/services/tools.py`)
-
-**Responsibility**: Defines available tools for LLM function calling.
-
-**Public interface**:
-- `get_tools() -> list[ToolDefinition]`
-- `execute_tool(name: str, args: dict, context: ToolContext) -> ToolResult`
+## 2. Application Bootstrap
+
+### 2.1 Entry Point: `app/main.py` (279 lines)
+
+```
+FastAPI(app)
+  │
+  ├── Middleware (registered in order)
+  │   ├── SecurityHeadersMiddleware
+  │   ├── RequestIdMiddleware
+  │   ├── AuditPersistenceMiddleware
+  │   ├── CORSMiddleware
+  │   ├── RateLimitMiddleware
+  │   ├── TenancyMiddleware
+  │   └── RBACMiddleware
+  │
+  ├── Error Handlers
+  │   ├── 422 ValidationError → sanitized
+  │   ├── 500 SQLAlchemyError → sanitized
+  │   └── 500 Exception → sanitized
+  │
+  ├── API Routers (14 routers, 81 endpoints)
+  │   ├── auth.router
+  │   ├── workspace.router
+  │   ├── projects.router
+  │   ├── sessions.router
+  │   ├── chat.router
+  │   ├── memory.router
+  │   ├── ingest.router
+  │   ├── provenance.router
+  │   ├── dashboard.router
+  │   ├── feedback.router
+  │   ├── api_keys.router
+  │   ├── storage.router
+  │   ├── policy.router
+  │   └── audit.router
+  │
+  └── Health Endpoints
+      ├── GET /health/live
+      ├── GET /health/ready
+      └── GET /health
+```
+
+### 2.2 Lifespan
+
+| Phase | Action | Source File |
+|---|---|---|
+| Startup | `setup_logging()` (dev only) | app/main.py:168 |
+| Startup | `await init_db()` — apply migrations | app/main.py:169 |
+| Startup | `audit.register_db_sink()` — wire DB persistence | app/main.py:170 |
+| Runtime | `yield` — serve requests | app/main.py:173 |
+| Shutdown | Engine disposal (SQLAlchemy) | app/db.py |
 
 ---
 
-## 4. SQLAlchemy Models
+## 3. Database Layer
 
-All models are defined in `app/models.py` using SQLAlchemy 2.0 async ORM with `DeclarativeBase`.
+### 3.1 Engine Configuration (`app/db.py`, 46 lines)
 
-### 4.1 Enums
+| Parameter | Value | Purpose |
+|---|---|---|
+| Driver | asyncpg | Async PostgreSQL |
+| Pool Size | 50 | Max persistent connections |
+| Max Overflow | 20 | Burst capacity |
+| Pool Pre-Ping | True | Detect stale connections |
+| Pool Recycle | 3600s | Force reconnect every hour |
+| Echo | debug mode only | SQL logging |
+| Expire on Commit | False | Keep objects after commit |
 
-**`UserRole`** (line 11) – `str, enum.Enum`
-- `owner` – full workspace control
-- `admin` – administrative access
-- `member` – standard access
-- `viewer` – read-only access
+### 3.2 Session Management
 
-### 4.2 Core Models
+```python
+# app/db.py
+async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-| Model | Line | Primary Key | Key Columns | Relationships |
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory() as session:
+        yield session
+```
+
+Each request gets a fresh `AsyncSession` via FastAPI dependency injection. `AuditPersistenceMiddleware` creates a separate short-lived session for audit writes (atomic with respect to request transaction).
+
+### 3.3 Base Model
+
+```python
+# app/db.py
+class Base(DeclarativeBase):
+    pass
+```
+
+All 23 models inherit from `Base`. UUID primary keys are auto-generated via `uuid.uuid4()` default.
+
+### 3.4 Migration System
+
+| Aspect | Detail | Source File |
+|---|---|---|
+| Config | `alembic.ini` at project root | alembic.ini |
+| Env | `alembic/env.py` (async) | alembic/env.py |
+| Versions | 12 migrations (001-012) | alembic/versions/ |
+| Init | `init_db()` runs `upgrade head` | app/db.py:40 |
+| Init runs at | Lifespan startup | app/main.py:169 |
+
+---
+
+## 4. LLM Provider Abstraction
+
+### 4.1 Provider Hierarchy
+
+```
+LLMProvider (protocol base)
+  │
+  ├── AnthropicProvider    (Anthropic SDK, messages.create)
+  ├── OpenAIProvider       (OpenAI SDK, chat.completions.create)
+  ├── DeepSeekProvider     (OpenAI SDK, custom base_url)
+  └── MockProvider         (Deterministic, no API key needed)
+```
+
+### 4.2 Provider Interface
+
+| Method | Signature | Purpose |
+|---|---|---|
+| `chat_completion` | `(messages, model, max_tokens, temperature, stream) → dict \| AsyncIterator` | Core completion |
+| `aclose` | `() → None` | Cleanup client resources |
+
+### 4.3 Provider Selection Logic
+
+| Priority | Provider | Condition | Source File |
+|---|---|---|---|
+| 1 | Anthropic | `llm_provider=anthropic` AND `anthropic_api_key` set | app/services/llm.py:292 |
+| 2 | OpenAI | `llm_provider=openai` AND `openai_api_key` set | app/services/llm.py:294 |
+| 3 | DeepSeek | `llm_provider=deepseek` AND `deepseek_api_key` set | app/services/llm.py:296 |
+| 4 | Mock | No key configured | app/services/llm.py:299 |
+
+### 4.4 Timeout & Retry Wrapper
+
+| Setting | Default | Env Var | Source File |
+|---|---|---|---|
+| Timeout | 30s | `LLM_TIMEOUT_SECONDS` | app/core/config.py:40 |
+| Max Retries | 2 | `LLM_MAX_RETRIES` | app/core/config.py:41 |
+| Backoff | 1.0s exponential | `LLM_RETRY_BACKOFF` | app/core/config.py:42 |
+
+All live providers are wrapped with `_with_timeout_and_retry()`. On final failure, returns error dict (never raises).
+
+### 4.5 MockProvider Behavior
+
+| Scenario | Response | Source File |
+|---|---|---|
+| Memory context present | `[Mock AI] Answer based on ingested memory: {context}` | app/services/llm.py:227 |
+| No memory | `[Mock AI] I received your message: "{user_msg}". Set a real LLM_API_KEY...` | app/services/llm.py:230 |
+| Stream | Yields words with spaces | app/services/llm.py:234-238 |
+
+---
+
+## 5. Ingestion Pipeline (M0-M5)
+
+### 5.1 Pipeline Orchestrator
+
+**File:** `app/services/pipeline.py` (238 lines)
+**Entry:** `run_pipeline(db, *, workspace_id, tenant_id, project_id, user_id, source_type, raw_content, title, config)`
+
+### 5.2 Stage Detail
+
+| Stage | Name | Input | Output | File | Lines |
+|---|---|---|---|---|---|
+| M0 | Normalize | Raw text/JSON/file | `NormalizedConversation` (title, messages, metadata) | app/services/connectors.py | 760 |
+| M1 | Session Understanding | Messages list | `topics[]`, `entities_mentioned[]`, `summary` | app/services/m1_session.py | 139 |
+| M2 | Fact + Decision Extraction | Messages list | `facts[]`, `decisions[]` | app/services/m2_facts.py | 177 |
+| M3 | Temporal Supersession | Facts | Deduped/superseded facts | app/services/m3_temporal.py | 202 |
+| M4 | Graph Persistence | All text | `nodes_created`, `edges_created` | app/services/m4_graph.py | 192 |
+| M5 | Retrieval | Query | Hybrid-ranked results | app/services/m5_retrieval.py | 294 |
+
+### 5.3 Pipeline State Machine
+
+| Stage | Progress % | Source Status | Source Field |
+|---|---|---|---|
+| M0 | 0% | `processing` | `source.stage = "M0"` |
+| M1 | 25% | `processing` | `source.stage = "M1"` |
+| M2 | 50% | `processing` | `source.stage = "M2"` |
+| M3 | 75% | `processing` | `source.stage = "M3"` |
+| M4 | 85% | `processing` | `source.stage = "M4"` |
+| M5 | 100% | `completed` | `source.stage = "M5"`, `source.status = "completed"` |
+| — | — | `failed` | On exception: `source.status = "failed"`, `source.error_message` |
+
+### 5.4 Fact Dedup Logic (M3 inline)
+
+```
+For each extracted fact (subject, predicate, object):
+  existing = SELECT * FROM facts
+             WHERE workspace_id = ?
+               AND subject = ?
+               AND predicate = ?
+               AND temporal_status = 'current'
+               AND deleted_at IS NULL
+
+  IF existing:
+    IF existing.object != fact.object (case-insensitive):
+      existing.temporal_status = 'historical'
+      CREATE new fact with temporal_status = 'current'
+    ELSE:
+      SKIP (exact duplicate)
+  ELSE:
+    CREATE new fact with temporal_status = 'current'
+```
+
+**Invariant:** One "current" fact per (workspace_id, subject, predicate).
+
+---
+
+## 6. Middleware Stack
+
+### 6.1 Registration Order (outermost first)
+
+```
+Request
+  │
+  ▼
+[1] SecurityHeadersMiddleware  ← app/main.py:187
+  │   Adds: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
+  │
+  ▼
+[2] RequestIdMiddleware         ← app/main.py:189
+  │   Adds: X-Request-ID header, measures latency_ms
+  │
+  ▼
+[3] AuditPersistenceMiddleware  ← app/main.py:213
+  │   After each request: flush buffered audit events to PostgreSQL
+  │   Uses independent session (atomic wrt request transaction)
+  │
+  ▼
+[4] CORSMiddleware              ← app/main.py:217
+  │   allow_origins: cors_origins_safe (never wildcard with credentials)
+  │   allow_methods: GET, POST, PATCH, DELETE, OPTIONS
+  │
+  ▼
+[5] RateLimitMiddleware         ← app/main.py:228
+  │   In-memory sliding window per IP
+  │
+  ▼
+[6] TenancyMiddleware           ← app/middleware/tenancy.py
+  │   Injects TenantContext from JWT
+  │
+  ▼
+[7] AuthMiddleware              ← app/middleware/auth.py
+  │   Validates Bearer JWT, loads User
+  │
+  ▼
+[8] RBACMiddleware              ← app/middleware/rbac.py
+  │   Checks role permissions
+  │
+  ▼
+[Endpoint Handler]
+  │
+  ▼
+Response
+```
+
+---
+
+## 7. Tenancy & Isolation
+
+### 7.1 TenantContext
+
+```python
+# app/middleware/tenancy.py
+@dataclass
+class TenantContext:
+    tenant_id: str
+    tenant_name: str | None = None
+    tenant_plan: str | None = None
+    workspace_id: str | None = None
+    workspace_name: str | None = None
+    role: str = "viewer"
+    user_id: str | None = None
+```
+
+### 7.2 Isolation Boundaries
+
+| Boundary | Mechanism | Enforcement |
+|---|---|---|
+| Tenant → Workspace | FK `workspaces.tenant_id` | DB-level |
+| Workspace → Projects | FK `projects.workspace_id` | DB-level |
+| Workspace → Members | FK `workspace_members.workspace_id` | DB-level |
+| Cross-tenant access | RBAC middleware checks `tenant_id` match | Middleware |
+| Row-level | All queries filter by `workspace_id` or `tenant_id` | Service layer |
+
+### 7.3 Multi-Workspace Support
+
+Users can belong to multiple workspaces via `WorkspaceMember`. The active workspace is resolved from the JWT token or request context. All data operations are scoped to `workspace_id`.
+
+---
+
+## 8. Security & Authentication
+
+### 8.1 JWT Configuration
+
+| Setting | Default | Env Var | Source File |
+|---|---|---|---|
+| Secret Key | dev-insecure-default (warned) | `SECRET_KEY` | app/core/config.py:26 |
+| Algorithm | HS256 | `ALGORITHM` | app/core/config.py:27 |
+| Access Token Expiry | 60 minutes | `ACCESS_TOKEN_EXPIRE_MINUTES` | app/core/config.py:28 |
+| Refresh Token Expiry | 30 days | `REFRESH_TOKEN_EXPIRE_DAYS` | app/core/config.py:29 |
+| Token URL | `auth/login` | — | app/middleware/auth.py:13 |
+
+### 8.2 JWT Validation
+
+| Check | Implementation | Source File |
+|---|---|---|
+| Token presence | `auto_error=False`, manual 401 | app/middleware/auth.py:21 |
+| Signature | `security.decode_access_token()` | app/middleware/auth.py:27 |
+| Payload `sub` | User ID extraction | app/middleware/auth.py:34 |
+| User active | `user.is_active` check | app/middleware/auth.py |
+
+### 8.3 Password Security
+
+| Aspect | Implementation | Source File |
+|---|---|---|
+| Hashing | passlib context (bcrypt) | app/core/security.py |
+| Min length | Pydantic validation | app/schemas.py |
+| Never returned | Pydantic `exclude=True` | app/schemas.py |
+
+### 8.4 Refresh Tokens
+
+| Aspect | Detail | Source File |
+|---|---|---|
+| Storage | `refresh_tokens` table | app/models.py:147 |
+| Lifetime | 30 days | app/core/config.py:29 |
+| Revocation | Logout deletes token | app/api/auth.py |
+| Rotation | New refresh on use | app/api/auth.py |
+
+### 8.5 API Key Authentication
+
+| Aspect | Detail | Source File |
+|---|---|---|
+| Storage | `api_keys` table with `key_hash` | app/models.py:685 |
+| Format | `sv_` prefix + random bytes | app/api/api_keys.py |
+| Hashing | SHA-256 | app/models.py |
+| Revocation | Delete row | app/api/api_keys.py |
+
+---
+
+## 9. Configuration Management
+
+### 9.1 Settings Class
+
+**File:** `app/core/config.py` (166 lines)
+**Class:** `Settings(BaseSettings)` with `env_file=".env"`
+
+### 9.2 Configuration Categories
+
+| Category | Settings | Source File |
+|---|---|---|
+| **App** | `app_name`, `environment`, `debug` | app/core/config.py:14-15 |
+| **Database** | `database_url` | app/core/config.py:23 |
+| **Auth** | `secret_key`, `algorithm`, `access_token_expire_minutes`, `refresh_token_expire_days` | app/core/config.py:26-29 |
+| **CORS** | `cors_origins` (string) | app/core/config.py:33 |
+| **LLM** | `llm_provider`, `llm_model`, `llm_max_tokens`, `llm_temperature`, `llm_timeout_seconds`, `llm_max_retries`, `llm_retry_backoff` | app/core/config.py:36-42 |
+| **LLM Keys** | `anthropic_api_key`, `openai_api_key`, `deepseek_api_key` | app/core/config.py:43-45 |
+| **SwarmVault** | `swarmvault_url`, `swarmvault_api_key` | app/core/config.py:48-49 |
+| **Observability** | `log_level`, `enable_metrics` | app/core/config.py:52-53 |
+| **Rate Limits** | `rate_limit_login`, `rate_limit_chat`, `rate_limit_ingest`, `rate_limit_search`, `rate_limit_api` | app/core/config.py:56-60 |
+| **Storage** | `storage_backend`, `storage_path`, `s3_endpoint`, `s3_access_key`, `s3_secret_key`, `s3_bucket`, `s3_region` | app/core/config.py:63-69 |
+
+### 9.3 Validators
+
+| Validator | Purpose | Source File |
+|---|---|---|
+| `_validate_secret_key` | Reject insecure defaults in production, warn in dev | app/core/config.py:71-113 |
+| `_validate_database_url` | Reject dev DB URL in production | app/core/config.py:115-124 |
+
+### 9.4 Properties
+
+| Property | Returns | Source File |
+|---|---|---|
+| `debug` | `environment != "production"` | app/core/config.py:17-20 |
+| `is_production` | `environment == "production"` | app/core/config.py:144-146 |
+| `cors_origins_list` | Parsed list from string/JSON | app/core/config.py:126-142 |
+| `cors_origins_safe` | Strips wildcard, enforces localhost in dev | app/core/config.py:148-163 |
+
+---
+
+## 10. Observability & Audit
+
+### 10.1 Structured Logging
+
+**File:** `app/main.py:88-107`
+**Format:** JSON via `StructuredFormatter`
+
+| Field | Value | Always Present |
+|---|---|---|
+| `timestamp` | ISO 8601 | Yes |
+| `level` | INFO, WARNING, ERROR | Yes |
+| `logger` | Module name (e.g. `app.main`) | Yes |
+| `message` | Log message | Yes |
+| `request_id` | X-Request-ID UUID | Yes |
+| `exception` | Stack trace | On error only |
+
+Enabled only in development (`environment != "production"`).
+
+### 10.2 Health Checks
+
+| Endpoint | Method | DB Check | Response | Source File |
 |---|---|---|---|---|
-| `Tenant` | 18 | `id` (UUID) | `name`, `slug`, `created_at`, `updated_at` | → Workspace |
-| `Workspace` | 39 | `id` (UUID) | `name`, `slug`, `tenant_id` (FK), `created_at` | → User (via WorkspaceMember), → Project |
-| `User` | 65 | `id` (UUID) | `email`, `hashed_password`, `full_name`, `role`, `is_active`, `created_at` | → Workspace (via WorkspaceMember), → RefreshToken, → Session |
-| `WorkspaceMember` | 97 | composite (`workspace_id`, `user_id`) | `role` (UserRole), `joined_at` | ← Workspace, ← User |
-| `Invitation` | 123 | `id` (UUID) | `email`, `workspace_id` (FK), `role`, `token`, `expires_at`, `accepted_at` | ← Workspace |
-| `RefreshToken` | 147 | `id` (UUID) | `user_id` (FK), `token_hash`, `expires_at`, `revoked_at`, `created_at` | ← User |
-| `Session` | 165 | `id` (UUID) | `user_id` (FK), `project_id` (FK), `title`, `metadata`, `created_at`, `updated_at` | ← User, ← Project, → Message |
-| `Message` | 191 | `id` (UUID) | `session_id` (FK), `role`, `content`, `metadata`, `created_at` | ← Session, → MessageProvenance |
-| `Project` | 209 | `id` (UUID) | `name`, `description`, `workspace_id` (FK), `owner_id` (FK), `created_at`, `updated_at` | ← Workspace, ← User, → Session |
-| `Memory` | 232 | `id` (UUID) | `project_id` (FK), `type`, `content`, `metadata`, `embedding` (vector), `created_at`, `updated_at` | ← Project |
-| `IngestJob` | 269 | `id` (UUID) | `project_id` (FK), `source_id` (FK), `status`, `progress`, `error`, `created_at`, `updated_at` | ← Project, ← Source |
-| `Source` | 302 | `id` (UUID) | `project_id` (FK), `name`, `type`, `config` (JSON), `status`, `last_synced_at`, `created_at` | ← Project, → IngestJob, → NormalizedMessage |
-| `NormalizedMessage` | 369 | `id` (UUID) | `source_id` (FK), `external_id`, `content`, `author`, `timestamp`, `metadata`, `created_at` | ← Source |
-| `Fact` | 413 | `id` (UUID) | `project_id` (FK), `statement`, `confidence`, `source_ids` (JSON), `metadata`, `created_at`, `updated_at` | ← Project |
-| `Decision` | 467 | `id` (UUID) | `project_id` (FK), `statement`, `context`, `decided_at`, `metadata`, `created_at` | ← Project |
-| `GraphNode` | 520 | `id` (UUID) | `project_id` (FK), `label`, `type`, `properties` (JSON), `embedding`, `created_at` | ← Project |
-| `GraphEdge` | 561 | `id` (UUID) | `project_id` (FK), `source_id` (FK→GraphNode), `target_id` (FK→GraphNode), `type`, `properties` (JSON), `weight`, `created_at` | ← Project |
-| `MessageProvenance` | 607 | `id` (UUID) | `message_id` (FK), `source_type`, `source_id`, `relation`, `metadata`, `created_at` | ← Message |
-| `MessageFeedback` | 656 | `id` (UUID) | `message_id` (FK), `user_id` (FK), `rating`, `feedback`, `created_at` | ← Message, ← User |
-| `ApiKey` | 684 | `id` (UUID) | `user_id` (FK), `name`, `key_hash`, `permissions` (JSON), `last_used_at`, `expires_at`, `created_at` | ← User |
-| `Policy` | 727 | `id` (UUID) | `name`, `type`, `description`, `is_active`, `created_at`, `updated_at` | → PolicyVersion |
-| `PolicyVersion` | 761 | `id` (UUID) | `policy_id` (FK), `version`, `rules` (JSON), `created_by` (FK), `created_at` | ← Policy, ← User |
-| `AuditEvent` | 788 | `id` (UUID) | `workspace_id` (FK), `user_id` (FK), `action`, `resource_type`, `resource_id`, `metadata` (JSON), `ip_address`, `user_agent`, `created_at` | ← Workspace, ← User |
+| `/health/live` | GET | No | `{"status": "alive"}` | app/main.py:256 |
+| `/health/ready` | GET | Yes (`SELECT 1`) | `{"status": "ready", "database": "connected"}` or 503 | app/main.py:261 |
+| `/health` | GET | No | `{"status": "ok"}` | app/main.py:277 |
 
-### 4.3 Model Patterns
+### 10.3 Audit Service
 
-- **UUID primary keys**: All models use `UUID` as primary key, generated via `server_default=text("gen_random_uuid()")`.
-- **Soft deletion**: `is_active` boolean on `User`, `Workspace`, `Policy` models.
-- **JSON columns**: `metadata`, `config`, `properties`, `source_ids`, `permissions`, `rules` use `JSONB` for flexible structured data.
-- **Vector columns**: `Memory.embedding` and `GraphNode.embedding` use pgvector `Vector(dim)` type.
-- **Timestamps**: `created_at`, `updated_at` on all models using `server_default=now()`.
-- **Foreign keys**: All FKs use `ondelete="CASCADE"` for data integrity.
-- **Indexes**: Composite indexes on `(project_id, created_at)` for `Fact`, `Decision`, `GraphNode`, `GraphEdge`, `Memory`. `(workspace_id, user_id)` on `WorkspaceMember`.
+**File:** `app/services/audit/service.py` (305 lines)
+**Singleton:** `audit = AuditService()` at `app/main.py:161`
+
+| Aspect | Detail | Source File |
+|---|---|---|
+| Buffer size | 1000 events max | app/services/audit/service.py:136 |
+| Drop policy | Oldest first (drop-oldest) | app/services/audit/service.py:177-178 |
+| Persistence | PostgreSQL per-request | app/main.py:193 |
+| Session | Independent short-lived (atomic) | app/main.py:203-207 |
+| Failure policy | Log warning, clear buffer, never block response | app/main.py:209 |
+| Disabled for tests | `_disabled_for_testing` flag | app/services/audit/service.py |
+
+### 10.4 Request ID & Latency
+
+| Field | Source | Source File |
+|---|---|---|
+| `X-Request-ID` | Client header or UUID | app/main.py:26 |
+| `latency_ms` | `time.monotonic()` delta | app/main.py:35 |
+| Logged in | Structured log + response header | app/main.py:36-45, 33 |
 
 ---
 
-## 5. Middleware Stack
+## 11. Service Layer Map
 
-### 5.1 SecurityHeadersMiddleware (`app/middleware/__init__.py` or main.py)
-
-**Responsibility**: Injects security headers on every HTTP response.
-
-**Headers set**:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: geolocation=(), microphone=(), camera=()`
-
-**Line references**: Applied in `app/main.py` as first middleware.
-
-### 5.2 RequestIdMiddleware
-
-**Responsibility**: Generates a unique `X-Request-ID` for each request, propagates it through the call chain.
-
-**Behavior**:
-- Checks for existing `X-Request-ID` header (client-provided) or generates UUID v4
-- Stores in request state for downstream access
-- Adds to response headers
-
-**Usage**: Used by `AuditPersistenceMiddleware` and logging to correlate request lifecycle events.
-
-### 5.3 AuditPersistenceMiddleware
-
-**Responsibility**: Logs request/response pairs to the `AuditEvent` table for compliance.
-
-**Behavior**:
-- Captures: method, path, query params, user ID, workspace ID, IP, user agent
-- Records after response (status code, response size)
-- Filters out health-check and static asset requests
-- Uses `AuditService` to persist events
-
-**Performance**: Async, non-blocking. Does not await response body.
-
-### 5.4 RateLimitMiddleware
-
-**Responsibility**: Per-key sliding-window rate limiting.
-
-**Key derivation**: `user_id` for authenticated requests, `ip_address` for unauthenticated.
-
-**Configuration**:
-- Default: 100 requests/minute per key
-- Burst: 20 requests/second
-- Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-
-**Storage**: In-memory with sliding window. For production, Redis-backed.
-
-### 5.5 CORSMiddleware
-
-**Responsibility**: Handles Cross-Origin Resource Sharing.
-
-**Configuration**:
-- `allow_origins`: From `settings.cors_origins` (comma-separated list)
-- `allow_methods`: `["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]`
-- `allow_headers`: `["Authorization", "Content-Type", "X-Workspace-Id", "X-Request-ID"]`
-- `allow_credentials`: `True`
-
----
-
-## 6. Configuration
-
-All settings are in `app/core/config.py` using Pydantic `BaseSettings`.
-
-### 6.1 Environment
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `environment` | `Literal["dev", "staging", "prod"]` | `"dev"` | Runtime environment |
-| `debug` | `bool` | `False` | Debug mode |
-| `log_level` | `str` | `"INFO"` | Logging level |
-
-### 6.2 Database
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `database_url` | `str` | Required | PostgreSQL async connection URL |
-| `db_pool_size` | `int` | `5` | Connection pool size |
-| `db_max_overflow` | `int` | `10` | Max overflow connections |
-
-### 6.3 Authentication
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `secret_key` | `str` | Required | JWT signing secret |
-| `algorithm` | `str` | `"HS256"` | JWT algorithm |
-| `access_token_expire_minutes` | `int` | `30` | Access token TTL |
-| `refresh_token_expire_days` | `int` | `7` | Refresh token TTL |
-| `password_min_length` | `int` | `8` | Minimum password length |
-
-### 6.4 CORS
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `cors_origins` | `str` | `"*"` | Comma-separated allowed origins |
-
-### 6.5 LLM
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `llm_provider` | `str` | `"anthropic"` | LLM provider name |
-| `llm_api_key` | `str` | Required | Provider API key |
-| `llm_model` | `str` | `"claude-sonnet-4-20250514"` | Model identifier |
-| `llm_max_tokens` | `int` | `4096` | Max completion tokens |
-| `llm_temperature` | `float` | `0.7` | Generation temperature |
-| `embedding_model` | `str` | `"text-embedding-3-small"` | Embedding model |
-| `embedding_dimensions` | `int` | `1536` | Embedding vector dimensions |
-
-### 6.6 Object Storage
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `storage_backend` | `Literal["s3", "minio"]` | `"minio"` | Storage backend |
-| `s3_bucket` | `str` | Required | S3 bucket name |
-| `s3_region` | `str` | `"us-east-1"` | S3 region |
-| `s3_access_key` | `str` | Required | S3 access key |
-| `s3_secret_key` | `str` | Required | S3 secret key |
-| `s3_endpoint_url` | `str` | `None` | S3 endpoint (for MinIO) |
-
-### 6.7 Rate Limiting
-
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `rate_limit_requests` | `int` | `100` | Requests per minute |
-| `rate_limit_burst` | `int` | `20` | Burst requests per second |
-
----
-
-## 7. Dependency Injection
-
-### 7.1 `get_db` (`app/db.py`)
-
-**Type**: `AsyncGenerator[AsyncSession, None]`
-
-**Responsibility**: Provides an async database session per request.
-
-**Implementation**: Yields from `async_session_factory()` with automatic rollback on exception and commit on success.
-
-**Used by**: All routers that need database access.
-
-### 7.2 `get_tenant_context` (`app/middleware/tenancy.py`)
-
-**Type**: `Dependency[TenantContext]`
-
-**Responsibility**: Resolves the current tenant/workspace context from the request.
-
-**Resolution order**:
-1. `X-Workspace-Id` header (highest priority)
-2. User's default workspace
-3. First available workspace membership
-
-**Returns**: `TenantContext` with `workspace_id`, `tenant_id`, `user_id`, `role`.
-
-### 7.3 `require_min_role` (`app/middleware/rbac.py`)
-
-**Type**: `Dependency[UserRole]`
-
-**Responsibility**: Enforces minimum role requirement.
-
-**Usage**: `Depends(require_min_role("admin"))` – rejects if user role is below admin.
-
-**Role hierarchy**: `owner > admin > member > viewer` (lower in list = less privileged).
-
-### 7.4 `require_policy` (`app/services/policy/dependencies.py`)
-
-**Type**: `Dependency[None]`
-
-**Responsibility**: Enforces policy evaluation before endpoint access.
-
-**Usage**: `Depends(require_policy("data_access"))` – evaluates `data_access` policy.
-
-**Behavior**: Raises `HTTPException(403)` if policy evaluation denies.
-
-### 7.5 `get_memory_service` (`app/services/memory.py`)
-
-**Type**: `Dependency[MemoryService]`
-
-**Responsibility**: Provides the MemoryService singleton.
-
-**Implementation**: Returns module-level `_memory_service` instance, initializing if needed.
-
-**Used by**: `chat.py`, `memory.py`, `ingest.py`.
-
----
-
-## 8. Authentication
-
-### 8.1 JWT Implementation (`app/api/auth.py`)
-
-**Access Token**:
-- Algorithm: HS256
-- Expiry: 30 minutes (`settings.access_token_expire_minutes`)
-- Claims: `sub` (user ID), `role`, `workspace_id`, `exp`
-- Signed with `settings.secret_key`
-
-**Refresh Token**:
-- Stored hashed in `RefreshToken` model (`token_hash`)
-- Expiry: 7 days (`settings.refresh_token_expire_days`)
-- Rotation: New refresh token issued on each refresh, old one revoked
-- Revocation: On logout, sets `revoked_at`
-
-**Token verification** (`app/middleware/auth.py`):
-- Extracts `Authorization: Bearer <token>` header
-- Verifies signature and expiry
-- Loads user from database
-- Attaches `user` to `request.state`
-
-### 8.2 Password Hashing
-
-**Algorithm**: bcrypt (via `passlib.context.CryptContext`)
-**Settings**: `schemes=["bcrypt"], deprecated="auto"`
-**Verification**: `pwd_context.verify(plain, hashed)`
-**Hashing**: `pwd_context.hash(plain)`
-
-### 8.3 Registration Flow
-
-1. Hash password
-2. Create `User` record
-3. Create default `Workspace` for user
-4. Create `WorkspaceMember` record (role=owner)
-5. Generate access + refresh tokens
-6. Return `TokenResponse`
-
----
-
-## 9. Authorization (RBAC)
-
-### 9.1 Role Hierarchy (`app/middleware/rbac.py`)
-
-```
-owner (4)
-  └── admin (3)
-        └── member (2)
-              └── viewer (1)
-```
-
-`require_min_role(role)` checks `user.role >= required_role` using this hierarchy.
-
-### 9.2 Workspace-Level Permissions
-
-| Action | owner | admin | member | viewer |
+| Service | File | Lines | Dependencies | Purpose |
 |---|---|---|---|---|
-| Manage workspace | Yes | Yes | No | No |
-| Invite users | Yes | Yes | No | No |
-| Remove users | Yes | Yes | No | No |
-| Create project | Yes | Yes | Yes | No |
-| Delete project | Yes | Yes | No | No |
-| Chat | Yes | Yes | Yes | Yes |
-| View memory | Yes | Yes | Yes | Yes |
-| Edit memory | Yes | Yes | Yes | No |
+| **LLM** | app/services/llm.py | 401 | app/core/config.py | Provider abstraction, timeout/retry |
+| **Pipeline** | app/services/pipeline.py | 238 | m1, m2, m3, m4, connectors | M0-M5 orchestration |
+| **Connectors** | app/services/connectors.py | 760 | — | Input format normalization |
+| **M1 Session** | app/services/m1_session.py | 139 | llm | Topic/entity/intent extraction |
+| **M2 Facts** | app/services/m2_facts.py | 177 | llm | Fact + decision extraction |
+| **M3 Temporal** | app/services/m3_temporal.py | 202 | models | Fact supersession |
+| **M4 Graph** | app/services/m4_graph.py | 192 | models | Entity/edge persistence |
+| **M5 Retrieval** | app/services/m5_retrieval.py | 294 | memory, retrieval | Hybrid search for chat |
+| **Memory** | app/services/memory.py | 1045 | models, llm | Vector embeddings, CRUD |
+| **Retrieval** | app/services/retrieval.py | 121 | models | BM25 + semantic + graph |
+| **Chat Orchestrator** | app/services/chat_orchestrator.py | 152 | llm, m5, models | End-to-end chat flow |
+| **Audit** | app/services/audit.py | 305 | models | Event buffering, persistence |
+| **Object Storage** | app/services/object_storage.py | 141 | s3, minio | Unified storage interface |
+| **Object Storage S3** | app/services/object_storage_s3.py | 84 | boto3 | AWS S3 backend |
+| **Object Storage MinIO** | app/services/object_storage_minio.py | 85 | boto3 | MinIO backend |
+| **Tools** | app/services/tools.py | 473 | llm | Function calling tools |
 
-### 9.3 Policy Engine Integration (`app/services/policy/engine.py`)
+---
 
-The policy engine provides ABAC (Attribute-Based Access Control) on top of RBAC.
+## 12. Data Flow Diagrams
 
-**Policy types**:
-- `data_access` – controls what data a user can read
-- `data_modification` – controls what data a user can modify
-- `admin` – controls administrative actions
-- `system` – controls system-level operations
+### 12.1 Chat Flow
 
-**Policy structure**:
-```python
-{
-  "id": "uuid",
-  "name": "policy_name",
-  "type": "data_access",
-  "is_active": True,
-  "versions": [
-    {
-      "version": 1,
-      "rules": [...],
-      "created_at": "..."
-    }
-  ]
-}
+```
+User sends message (POST /api/v1/chat/)
+  │
+  ▼
+AuthMiddleware.validate_token()
+  │
+  ▼
+TenancyMiddleware.resolve_tenant()
+  │
+  ▼
+chat.router → chat_orchestrator.process_chat()
+  │
+  ├─▶ [1] M5 Retrieval (retrieve_for_chat)
+  │     ├─ Semantic search (memory table)
+  │     ├─ Graph traversal (graph_nodes, graph_edges)
+  │     └─ BM25 keyword search
+  │     → context_block, memory_ids_used
+  │
+  ├─▶ [2] Build LLM messages
+  │     └─ System prompt + memory context + user message
+  │
+  ├─▶ [3] LLM Provider call
+  │     └─ get_llm_provider() → Anthropic/OpenAI/DeepSeek/Mock
+  │     └─ Wrapped with timeout (30s) + retry (2x exponential backoff)
+  │     → llm_result { content, model, provider, usage }
+  │
+  ├─▶ [4] Confidence scoring
+  │     └─ base 0.7 (with memory) or 0.5 (without)
+  │     └─ + length bonus (max 0.3)
+  │
+  └─▶ [5] Provenance record
+        └─ MessageProvenance model (workspace, session, model, provider, retrieval, tokens, latency, confidence)
+        └─ db.add() + db.flush()
+
+  ← Response: { response, session_id, model, usage, memory_ids_used, retrieval_method, latency_ms, confidence, provider }
 ```
 
-**Evaluation context** includes: `user`, `workspace`, `resource_type`, `resource_id`, `action`.
+### 12.2 Ingestion Flow
 
----
+```
+User uploads content (POST /api/v1/ingest/)
+  │
+  ▼
+Auth + Tenancy validation
+  │
+  ▼
+ingest.router → run_pipeline(db, ...)
+  │
+  ├─▶ [M0] normalize() → NormalizedConversation
+  │     └─ Create Source (status=processing, stage=M0)
+  │     └─ Create Session
+  │     └─ Persist NormalizedMessages
+  │     └─ Progress: 25%
+  │
+  ├─▶ [M1] understand_session(messages)
+  │     └─ topics[], entities_mentioned[], summary
+  │     └─ Progress: 50%
+  │
+  ├─▶ [M2] extract_facts_and_decisions(messages)
+  │     └─ facts[] (subject-predicate-object + confidence + authority)
+  │     └─ decisions[] (content + context + confidence)
+  │     └─ Progress: 75%
+  │
+  ├─▶ [M3] Inline temporal check
+  │     └─ For each fact: SELECT current fact WHERE subject=?, predicate=?
+  │     └─ If different object: mark old as "historical", create new "current"
+  │     └─ If same object: skip (dedup)
+  │     └─ Progress: 85%
+  │
+  ├─▶ [M4] extract_graph_elements + persist_graph()
+  │     └─ Nodes: entities from text
+  │     └─ Edges: relationships from text
+  │     └─ Progress: 100%
+  │
+  └─▶ [M5] (implicit — retrieval at query time, no indexing step)
+        └─ Source.status = "completed"
+        └─ Source.completed_at = now
 
-## 10. Tenancy
-
-### 10.1 TenantContext (`app/middleware/tenancy.py`)
-
-**Fields**:
-- `workspace_id: UUID`
-- `tenant_id: UUID` (from workspace.tenant_id)
-- `user_id: UUID`
-- `role: UserRole`
-
-**Resolution**: Middleware extracts `X-Workspace-Id` header and resolves context. Stored in `request.state.tenant_context`.
-
-### 10.2 Workspace Membership (`app/models.py`, line 97)
-
-**Model**: `WorkspaceMember`
-- Composite PK: `(workspace_id, user_id)`
-- `role`: `UserRole` enum
-- `joined_at`: timestamp
-
-### 10.3 X-Workspace-Id Header
-
-**Required** on all authenticated requests (except `/auth/*`).
-**Validation**: Middleware verifies user is a member of the specified workspace.
-**Fallback**: If not provided, uses user's default workspace.
-
----
-
-## 11. Database Access
-
-### 11.1 Engine Configuration (`app/db.py`)
-
-```python
-engine = create_async_engine(
-    settings.database_url,
-    pool_size=settings.db_pool_size,
-    max_overflow=settings.db_max_overflow,
-    echo=settings.debug,
-)
+  ← Response: { source_id, session_id, status, stage, messages_processed, facts_created, decisions_created, graph_nodes_created, graph_edges_created, topics, entities }
 ```
 
-### 11.2 Session Factory
+### 12.3 Auth Flow
 
-```python
-async_session_factory = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+```
+POST /api/v1/auth/register
+  └─ Hash password → Create User + Workspace + WorkspaceMember(OWNER) → Return tokens
+
+POST /api/v1/auth/login
+  └─ Verify password → Create access_token (60min) + refresh_token (30d) → Return both
+
+POST /api/v1/auth/refresh
+  └─ Validate refresh_token → Create new access_token → Return
+
+POST /api/v1/auth/logout
+  └─ Delete refresh_token → Return 204
+
+GET /api/v1/auth/me
+  └─ Decode access_token → Return User (exclude password)
 ```
 
-### 11.3 Transaction Boundaries
+### 12.4 Frontend API Flow
 
-- **Default**: Auto-commit per operation (session commits after each endpoint handler)
-- **Explicit**: Multi-step transactions use `async with session.begin():`
-- **Rollback**: Automatic on exception in `get_db` dependency
-
-### 11.4 Base Model
-
-All models inherit from `DeclarativeBase` with:
-- `id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))`
-- `created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())`
-- `updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())`
+```
+Browser → api.ts (fetch wrapper)
+  │
+  ├─ Attach Bearer token from localStorage (sv_tokens)
+  ├─ Auto-refresh on 401 (POST /api/v1/auth/refresh)
+  ├─ Clear tokens on refresh failure
+  └─ Return parsed JSON or throw on non-2xx
+```
 
 ---
 
-## 12. Background Processing
+## 13. API Contract
 
-**No background processing framework is currently implemented.**
-
-- **No Celery** configuration found.
-- **No Redis** queue configuration found.
-- **No asyncio.create_task** usage found in routers.
-- **Ingestion** (`app/api/ingest.py`): Jobs are created as `IngestJob` records with `status="pending"`. There is no worker process shown to consume them. This is a **gap** – jobs may be created but never processed without a background worker.
-
-**Implication**: Long-running operations (M0–M5 pipeline, file processing) block the request/response cycle. This should be addressed in a future phase.
-
----
-
-## 13. External Providers
-
-### 13.1 LLM Provider (`app/services/llm.py`)
-
-**Supported providers**:
-- **Anthropic** (`anthropic`): Claude Sonnet/Opus via Anthropic SDK
-- **OpenAI** (`openai`): GPT-4 via OpenAI SDK
-- **Local** (`local`): Ollama or vLLM endpoint
-
-**Factory pattern**: `LLMProviderFactory.create()` returns the configured provider instance.
-
-**Capabilities**:
-- Chat completions (sync and streaming)
-- Embeddings
-- Token counting
-
-### 13.2 Object Storage (`app/services/object_storage.py`)
-
-**Backends**:
-- **S3** (`object_storage_s3.py`): Uses `boto3` with `aioboto3` for async operations
-- **MinIO** (`object_storage_minio.py`): Uses `minio` SDK, configurable endpoint URL
-
-**Factory**: `ObjectStorageFactory.create()` returns configured backend.
-
-**Operations**: Upload, download, delete, list, presigned URL generation.
-
-### 13.3 Embedding Provider
-
-**Default**: `text-embedding-3-small` (OpenAI)
-**Dimensions**: 1536
-**Used for**: `Memory.embedding`, `GraphNode.embedding`, retrieval index
-
----
-
-## 14. Error Handling
-
-### 14.1 Validation Errors
-
-- **Pydantic `RequestValidationError`**: Caught by FastAPI's built-in handler, returns 422 with field-level error details.
-- **Custom validation**: Additional checks in service layer raise `ValueError` or custom exceptions, caught by the generic `Exception` handler.
-
-### 14.2 Sanitization
-
-- **SQL injection**: Prevented via SQLAlchemy ORM (parameterized queries)
-- **XSS**: Response headers set by `SecurityHeadersMiddleware`
-- **Path traversal**: File download endpoints validate `file_id` against UUID format
-
-### 14.3 Fail-Closed Design
-
-- **Generic `Exception` handler**: Returns 500 with generic error message, no stack traces in production
-- **Policy denial**: Returns 403 with policy denial reason
-- **Auth failure**: Returns 401 without revealing whether user exists
-- **Rate limit**: Returns 429 with `Retry-After` header
-
-### 14.4 Error Response Format
+### 13.1 Error Response Shape
 
 ```json
 {
-  "detail": "Error message",
-  "request_id": "uuid",
-  "timestamp": "2026-09-10T..."
+  "error": {
+    "type": "validation_error | database_error | internal_error | ...",
+    "message": "Human-readable (sanitized)",
+    "request_id": "UUID (if available)"
+  }
 }
 ```
 
----
+All error messages pass through `_sanitize_detail()` which strips:
+- Passwords, secrets, tokens, API keys, database URLs
+- Windows paths (`C:\...`)
+- Unix paths (`/path/...`)
 
-## 15. Logging
+### 13.2 Pagination
 
-### 15.1 StructuredFormatter (`app/core/logging.py`)
+List endpoints return paginated results. See `app/schemas.py` for `PaginationParams` and `PaginatedResponse`.
 
-**Format**: JSON with fields:
-- `timestamp`: ISO 8601
-- `level`: log level
-- `logger`: logger name
-- `message`: log message
-- `request_id`: from `X-Request-ID`
-- `user_id`: authenticated user
-- `workspace_id`: current workspace
-- `duration_ms`: request duration
+### 13.3 Rate Limit Headers
 
-### 15.2 Request Scoping
-
-- `RequestIdMiddleware` generates `X-Request-ID`
-- `request.state.request_id` available in all downstream handlers
-- Audit events include `request_id` for correlation
-
----
-
-## 16. Observability
-
-### 16.1 Request IDs
-
-- Generated by `RequestIdMiddleware` (UUID v4)
-- Propagated via `X-Request-ID` header
-- Logged in every structured log entry
-- Stored in `AuditEvent.request_id`
-
-### 16.2 Latency
-
-- `AuditPersistenceMiddleware` records request/response timestamps
-- `duration_ms` calculated and stored in audit events
-- Dashboard exposes latency percentiles via `/api/v1/dashboard/usage`
-
-### 16.3 Metrics
-
-No dedicated metrics endpoint or Prometheus integration was found. Latency data is available via audit log analysis.
-
----
-
-## 17. Health/Readiness
-
-### 17.1 `/health` Endpoint
-
-**Location**: `app/main.py`
-**Method**: `GET`
-**Response**: `{"status": "ok"}` with 200
-**Purpose**: Basic liveness check
-
-### 17.2 `/health/ready` Endpoint
-
-**Location**: `app/main.py`
-**Method**: `GET`
-**Checks**:
-- Database connection (`SELECT 1`)
-- Storage backend connectivity
-**Response**: `{"status": "ready", "checks": {...}}` with 200 or 503
-
-### 17.3 `/health/live` Endpoint
-
-**Location**: `app/main.py`
-**Method**: `GET`
-**Response**: `{"status": "alive"}` with 200
-**Purpose**: Kubernetes liveness probe
-
----
-
-## 18. Runtime Dependencies
-
-### 18.1 Python Packages
-
-| Package | Version | Purpose |
+| Header | Value | Source File |
 |---|---|---|
-| `fastapi` | >=0.100.0 | Web framework |
-| `uvicorn[standard]` | >=0.23.0 | ASGI server |
-| `sqlalchemy[asyncio]` | >=2.0.0 | ORM |
-| `asyncpg` | >=0.28.0 | PostgreSQL async driver |
-| `alembic` | >=1.12.0 | Database migrations |
-| `pydantic` | >=2.0.0 | Validation |
-| `pydantic-settings` | >=2.0.0 | Config |
-| `python-jose[cryptography]` | >=3.3.0 | JWT |
-| `passlib[bcrypt]` | >=1.7.0 | Password hashing |
-| `python-multipart` | >=0.0.6 | Form data |
-| `anthropic` | >=0.18.0 | Anthropic API |
-| `openai` | >=1.0.0 | OpenAI API |
-| `boto3` | >=1.28.0 | S3 storage |
-| `minio` | >=7.2.0 | MinIO storage |
-| `pgvector` | >=0.2.0 | Vector type |
-| `redis` | >=5.0.0 | Cache (planned) |
-| `structlog` | >=23.0.0 | Structured logging |
+| `X-RateLimit-Limit` | Max requests | app/middleware/rate_limit.py |
+| `X-RateLimit-Remaining` | Remaining requests | app/middleware/rate_limit.py |
+| `X-RateLimit-Reset` | Window end timestamp | app/middleware/rate_limit.py |
 
-### 18.2 Infrastructure
+### 13.4 CORS Configuration
 
-| Component | Purpose | Required |
+| Environment | Behavior | Source File |
 |---|---|---|
-| PostgreSQL 15+ | Primary database with pgvector extension | Yes |
-| Redis (optional) | Cache + rate limiting backend | Recommended |
-| MinIO / S3 | Object storage | Yes |
-| Anthropic API / OpenAI API | LLM + embeddings | Yes |
+| Production | Explicit origins only (no wildcard) | app/main.py:59-71 |
+| Development | localhost:3000, localhost:8000, 127.0.0.1:3000 | app/main.py:72-81 |
+| Credentials | Always `allow_credentials=True` | app/main.py:220 |
 
 ---
 
-## 19. Representative Request Traces
+## Appendix A: Architecture Decisions
 
-### 19.1 Chat Completion Request
-
-```
-Client → POST /api/v1/chat/completions
-  Authorization: Bearer <access_token>
-  X-Workspace-Id: <workspace_id>
-  Content-Type: application/json
-  Body: {"messages": [{"role": "user", "content": "What did we decide about X?"}]}
-
-Trace through middleware stack:
-  SecurityHeadersMiddleware → no-op (request phase)
-  RequestIdMiddleware → generates X-Request-ID, stores in request.state
-  AuditPersistenceMiddleware → logs request start
-  RateLimitMiddleware → checks key rate limit
-  CORSMiddleware → validates origin
-
-Route dispatch: POST /api/v1/chat/completions
-  Dependency: get_tenant_context → resolves from X-Workspace-Id + user
-  Dependency: get_memory_service → returns MemoryService singleton
-
-Handler: chat_orchestrator.complete(request)
-  ├── ChatOrchestrator.complete()
-  │     ├── RetrievalService.search(project_id, query) → [Memory, ...]
-  │     │     ├── embed(query) → embedding (via LLM provider)
-  │     │     └── pgvector similarity search + BM25 RRF
-  │     ├── assemble_context(memories, history) → context_messages
-  │     ├── LLMProvider.complete(context_messages) → LLMResponse
-  │     │     └── anthropic.Anthropic().messages.create(...)
-  │     ├── post_process(response)
-  │     │     ├── MemoryService.create_memory(...) → Memory
-  │     │     ├── Fact extraction via LLM
-  │     │     └── GraphNode creation
-  │     └── return ChatResponse
-  └── Streaming: yield SSE chunks
-
-Response:
-  AuditPersistenceMiddleware → logs response (status=200, duration_ms)
-  RateLimitMiddleware → adds X-RateLimit-* headers
-  SecurityHeadersMiddleware → adds security headers
-  → 200 OK with JSON body
-```
-
-### 19.2 Memory Creation Request
-
-```
-Client → POST /api/v1/memory
-  Authorization: Bearer <access_token>
-  X-Workspace-Id: <workspace_id>
-  Body: {"content": "...", "type": "fact", "metadata": {...}}
-
-Route dispatch: POST /api/v1/memory
-  Dependency: get_tenant_context → {workspace_id, user_id, role}
-
-Handler: memory_service.create_memory(project_id, data)
-  ├── validate input against MemoryCreate schema
-  ├── embed(content) → [float, ...] (1536 dims)
-  ├── Memory(content=..., embedding=[...], project_id=...)
-  ├── session.add(memory)
-  ├── await session.commit()
-  └── return MemoryResponse
-
-Response: 201 Created with MemoryResponse
-```
-
-### 19.3 Project Creation Request
-
-```
-Client → POST /api/v1/projects
-  Authorization: Bearer <access_token>
-  X-Workspace-Id: <workspace_id>
-  Body: {"name": "New Project", "description": "..."}
-
-Route dispatch: POST /api/v1/projects
-  Dependency: get_tenant_context → {workspace_id, user_id, role=owner}
-  Dependency: require_min_role("member") → passes (owner >= member)
-
-Handler: projects.create_project(db, workspace_id, data)
-  ├── Project(name=..., description=..., workspace_id=..., owner_id=...)
-  ├── session.add(project)
-  ├── await session.commit()
-  └── return ProjectResponse
-
-Response: 201 Created with ProjectResponse
-```
+| ADR | Decision | Rationale | Source File |
+|---|---|---|---|
+| ADR-001 | FastAPI over Flask | Async-native, auto-docs, type hints | app/main.py |
+| ADR-002 | SQLAlchemy 2.0 async | Modern async ORM, connection pooling | app/db.py |
+| ADR-003 | PostgreSQL | JSON support, asyncpg driver, reliability | app/db.py |
+| ADR-004 | JWT (not sessions) | Stateless, works across services | app/core/security.py |
+| ADR-005 | Provider abstraction | Swappable LLM backends | app/services/llm.py |
+| ADR-006 | In-memory rate limiter | Simple, no Redis dependency | app/middleware/rate_limit.py |
+| ADR-007 | MockProvider fallback | Tests run without API keys | app/services/llm.py:196 |
+| ADR-008 | M5 at query time | No index build step, simpler pipeline | app/services/pipeline.py |
+| ADR-009 | Audit buffer + flush | Avoids per-event DB round-trips | app/services/audit/service.py |
+| ADR-010 | Independent audit session | Audit writes atomic wrt request | app/main.py:203 |
 
 ---
 
-## 20. Key Findings Summary
+## Appendix B: Source Authority Map
 
-### 20.1 Architecture Strengths
-
-1. **Clean separation**: Middleware, routers, services, models are well-separated
-2. **Tenancy by design**: Every request is scoped to a workspace
-3. **Type safety**: Full Pydantic + SQLAlchemy 2.0 typing
-4. **Async-first**: All I/O operations are async
-5. **Audit by default**: Every request is logged for compliance
-6. **Policy extensible**: ABAC layer on top of RBAC
-
-### 20.2 Identified Gaps
-
-1. **No background worker**: Ingestion jobs have no consumer. M0–M5 pipeline runs synchronously.
-2. **No Redis integration**: Rate limiting is in-memory (not distributed).
-3. **No metrics**: No Prometheus/OpenTelemetry integration.
-4. **Vector index**: Relies on pgvector brute-force; no HNSW/IVFFlat index strategy documented.
-5. **Error recovery**: No retry logic for external provider failures (LLM, storage).
-6. **File size limits**: No documented limits on upload size.
-7. **Pagination**: No documented pagination strategy for large result sets.
+| Manifest Section | Source File | Lines | Authority |
+|---|---|---|---|
+| System architecture | app/main.py | 279 | Single source of truth |
+| Database layer | app/db.py | 46 | Single source of truth |
+| LLM providers | app/services/llm.py | 401 | Single source of truth |
+| Pipeline | app/services/pipeline.py | 238 | Single source of truth |
+| Middleware | app/main.py | 22-228 | Single source of truth |
+| Tenancy | app/middleware/tenancy.py | 140 | Single source of truth |
+| Auth | app/middleware/auth.py | 51 | Single source of truth |
+| RBAC | app/middleware/rbac.py | 140 | Single source of truth |
+| Rate limiting | app/middleware/rate_limit.py | 119 | Single source of truth |
+| Config | app/core/config.py | 166 | Single source of truth |
+| Audit | app/services/audit/service.py | 305 | Single source of truth |
+| Security | app/core/security.py | 37 | Single source of truth |
+| Models | app/models.py | 838 | Single source of truth |
+| Schemas | app/schemas.py | 602 | Single source of truth |
+| Chat orchestrator | app/services/chat_orchestrator.py | 152 | Single source of truth |
+| Retrieval | app/services/m5_retrieval.py | 294 | Single source of truth |
+| Memory service | app/services/memory.py | 1045 | Single source of truth |
 
 ---
 
-*Document generated by Agent 1 – BACKEND RUNTIME ARCHITECTURE. Baseline: e6f4b1c1.*
+*This document is maintained by source-of-truth reconciliation. When source diverges from document, source wins and document is corrected.*
