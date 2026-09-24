@@ -63,14 +63,18 @@ async def send_chat_message(
     db.add(user_msg)
     await db.flush()
 
-    result = await process_chat(
-        db=db,
-        workspace_id=tc.workspace_id,
-        user_id=tc.user_id,
-        user_message=data.message,
-        session_id=session_id,
-        project_id=data.project_id,
-    )
+    try:
+        result = await process_chat(
+            db=db,
+            workspace_id=tc.workspace_id,
+            user_id=tc.user_id,
+            user_message=data.message,
+            session_id=session_id,
+            project_id=data.project_id,
+        )
+    except Exception:
+        await db.rollback()
+        raise
 
     assistant_msg = Message(
         session_id=session_id,
@@ -151,28 +155,38 @@ async def stream_chat(
             db.add(user_msg)
             await db.flush()
 
-            # Retrieve memories for sources event
-            retrieved = await retrieve_memories(
-                db=db,
-                workspace_id=tc.workspace_id,
-                query=data.message,
-                user_id=tc.user_id,
-                limit=5,
-            )
-            memory_ids_used: list[str] = []
-            sources = []
-            for mem, score in retrieved:
-                if score > 0.1:
-                    memory_ids_used.append(mem.id)
-                    sources.append({
-                        "memory_id": str(mem.id),
-                        "content": mem.content[:200],
-                        "memory_type": mem.memory_type,
-                        "score": round(score, 3),
-                    })
+            llm_failed = False
+            try:
+                # Retrieve memories for sources event
+                retrieved = await retrieve_memories(
+                    db=db,
+                    workspace_id=tc.workspace_id,
+                    query=data.message,
+                    user_id=tc.user_id,
+                    limit=5,
+                )
+                memory_ids_used: list[str] = []
+                sources = []
+                for mem, score in retrieved:
+                    if score > 0.1:
+                        memory_ids_used.append(mem.id)
+                        sources.append({
+                            "memory_id": str(mem.id),
+                            "content": mem.content[:200],
+                            "memory_type": mem.memory_type,
+                            "score": round(score, 3),
+                        })
+            except Exception:
+                llm_failed = True
 
-            # Send sources event first
-            yield await _sse_stream({"type": "sources", "sources": sources})
+            if not llm_failed:
+                # Send sources event first
+                yield await _sse_stream({"type": "sources", "sources": sources})
+
+            if llm_failed:
+                yield await _sse_stream({"type": "error", "detail": "Memory retrieval failed"})
+                await db.rollback()
+                return
 
             # Stream LLM response
             provider = get_llm_provider()
@@ -241,6 +255,9 @@ async def stream_chat(
                     "latency_ms": latency_ms,
                     "memory_grounded": bool(sources),
                 })
+            except Exception:
+                await db.rollback()
+                yield await _sse_stream({"type": "error", "detail": "LLM generation failed"})
             finally:
                 await provider.aclose()
 

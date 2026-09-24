@@ -143,6 +143,7 @@ async def list_memories(
 ):
     """List memories for the current user in the workspace."""
     query = select(Memory).where(
+        Memory.tenant_id == tc.tenant_id,
         Memory.workspace_id == tc.workspace_id,
         Memory.user_id == tc.user_id,
     )

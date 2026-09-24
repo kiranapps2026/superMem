@@ -77,25 +77,33 @@ async def upload_and_ingest(
         )
 
     # Validate content size (already bounded by schema max_length)
+    from pydantic import ValidationError
     from app.services.pipeline import run_pipeline
-    result = await run_pipeline(
-        db=db,
-        workspace_id=tc.workspace_id,
-        tenant_id=tc.tenant_id,
-        project_id=data.project_id,
-        user_id=tc.user_id,
-        source_type=data.source_type,
-        raw_content=data.content,
-        title=data.title,
-        config=data.config,
-    )
-    # Tag the source with the content hash for future dedup
-    source_id = result.get("source_id")
-    if source_id:
-        src = await db.get(Source, source_id)
-        if src:
-            src.content_hash = content_hash
-            await db.commit()
+    try:
+        result = await run_pipeline(
+            db=db,
+            workspace_id=tc.workspace_id,
+            tenant_id=tc.tenant_id,
+            project_id=data.project_id,
+            user_id=tc.user_id,
+            source_type=data.source_type,
+            raw_content=data.content,
+            title=data.title,
+            config=data.config,
+        )
+        # Tag the source with the content hash for future dedup
+        source_id = result.get("source_id")
+        if source_id:
+            src = await db.get(Source, source_id)
+            if src:
+                src.content_hash = content_hash
+                await db.commit()
+    except ValidationError:
+        await db.rollback()
+        raise
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Ingestion failed")
     # Audit: ingest completed
     _audit.emit(
         event_type=INGEST_COMPLETED,

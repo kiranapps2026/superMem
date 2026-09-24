@@ -7,7 +7,7 @@ import {
   MessageSquare, Upload, Brain, GitBranch,
   ShieldCheck, Clock, Search, Share2, Settings
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tooltip } from '@/components/ui/Tooltip';
 
 interface NavItem {
@@ -83,7 +83,6 @@ function NavLink({ item }: { item: NavItem }) {
 }
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
-  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -110,6 +109,18 @@ export function Sidebar() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const projectMatch = pathname.match(/\/projects\/([^/]+)/);
   const projectId = projectMatch?.[1];
+
+  // Auto-collapse on narrow viewports
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <aside className={`${sidebarCollapsed ? 'w-14' : 'w-56'} border-r border-[var(--sv-border-default)] bg-[var(--sv-bg-raised)] flex flex-col transition-all duration-[var(--sv-duration-base)] shrink-0`}>

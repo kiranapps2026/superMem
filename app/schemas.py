@@ -147,7 +147,7 @@ class SessionOut(BaseModel):
 
 class MessageCreate(BaseModel):
     role: Literal["user", "assistant", "system"]
-    content: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1, max_length=100_000)
     metadata: dict[str, Any] | None = None
 
 
@@ -165,7 +165,7 @@ class MessageOut(BaseModel):
 
 # Chat
 class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1, max_length=50_000)
     session_id: str | None = None
     project_id: str | None = None
 

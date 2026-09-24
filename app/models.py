@@ -344,8 +344,9 @@ class Source(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=True), nullable=True, index=True
     )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     normalized_messages: Mapped[list["NormalizedMessage"]] = relationship(
         "NormalizedMessage",
