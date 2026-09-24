@@ -15,7 +15,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.db import init_db
 from app.services.audit.service import AuditService
-from app.services.audit.service import AuditService
+
+logger = logging.getLogger("app.main")
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
