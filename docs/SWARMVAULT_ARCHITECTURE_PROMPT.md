@@ -322,7 +322,7 @@ SPECIFIC REQUIREMENTS:
    - Source.content_hash SHA-256 (line 319), indexed for dedup
    - Source.deleted_at (line 347) — soft delete for ingestion sources
    - NormalizedMessage unique constraints (lines 405-411)
-   - AuditEvent model (lines 789-838) — all indexed columns, the append-only invariant
+   - AuditEvent model (lines 786-835) — all indexed columns, the append-only invariant
 
 2. SCHEMA INVENTORY (schemas.py)
    For each Pydantic schema, document:

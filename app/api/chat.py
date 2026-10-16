@@ -80,7 +80,7 @@ async def send_chat_message(
         session_id=session_id,
         role="assistant",
         content=result["response"],
-        metadata={
+        extra_metadata={
             "model": result["model"],
             "usage": result["usage"],
             "memory_ids_used": result.get("memory_ids_used", []),

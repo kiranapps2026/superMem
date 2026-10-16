@@ -1,0 +1,206 @@
+Listing tests:
+  [chromium] › _diag-focus.spec.ts:5:5 › DIAGNOSTIC: login form tab order
+  [chromium] › api-e2e.spec.ts:59:7 › Golden Journey › register -> login -> workspace -> project -> upload -> ingest -> search -> chat -> provenance
+  [chromium] › api-e2e.spec.ts:113:7 › Authentication › register creates new user
+  [chromium] › api-e2e.spec.ts:121:7 › Authentication › login returns access and refresh tokens
+  [chromium] › api-e2e.spec.ts:132:7 › Authentication › login rejects wrong password
+  [chromium] › api-e2e.spec.ts:141:7 › Authentication › protected endpoint rejects missing token
+  [chromium] › api-e2e.spec.ts:152:7 › Tenant Isolation › tenant A cannot see tenant B data
+  [chromium] › api-e2e.spec.ts:203:7 › Connectors › ChatGPT connector uploads successfully
+  [chromium] › api-e2e.spec.ts:214:7 › Connectors › Claude connector uploads successfully
+  [chromium] › api-e2e.spec.ts:225:7 › Connectors › JSONL connector uploads successfully
+  [chromium] › api-e2e.spec.ts:242:7 › Security - Prompt Injection › malicious content stored as data only
+  [chromium] › api-e2e.spec.ts:278:7 › Error Handling › malformed body returns 422
+  [chromium] › api-e2e.spec.ts:283:7 › Error Handling › nonexistent endpoint returns 404
+  [chromium] › api-e2e.spec.ts:294:7 › Health › liveness returns alive
+  [chromium] › api-e2e.spec.ts:300:7 › Health › readiness returns ready
+  [chromium] › auth.spec.ts:11:7 › Authentication Pages › login page renders with form elements
+  [chromium] › auth.spec.ts:20:7 › Authentication Pages › register page link is accessible
+  [chromium] › auth.spec.ts:26:7 › Authentication Pages › login with invalid credentials shows error
+  [chromium] › auth.spec.ts:38:7 › Authentication Pages › login with empty fields validates
+  [chromium] › auth.spec.ts:48:7 › Authentication Pages › register page renders
+  [chromium] › auth.spec.ts:57:7 › Authentication Pages › register with mismatched passwords shows error
+  [chromium] › auth.spec.ts:68:7 › Authentication Pages › login link on register page works
+  [chromium] › dashboard.spec.ts:6:7 › Dashboard Page › unauthenticated access redirects to login
+  [chromium] › dashboard.spec.ts:12:7 › Dashboard Page › Projects page unauthenticated access redirects
+  [chromium] › dashboard.spec.ts:18:7 › Dashboard Page › Settings page unauthenticated access redirects
+  [chromium] › frontend-journey.spec.ts:47:7 › Golden Journey — Frontend UI › full journey: dashboard -> create project -> navigate pages
+  [chromium] › frontend-journey.spec.ts:81:7 › Golden Journey — Frontend UI › sidebar navigation is present and links work
+  [chromium] › frontend-journey.spec.ts:94:7 › Golden Journey — Frontend UI › logout redirects to login
+  [chromium] › frontend-journey.spec.ts:109:7 › Golden Journey — Frontend UI › unauthenticated access redirects to login
+  [chromium] › golden-journey.spec.ts:38:7 › Golden Journey › register → login → workspace → project → upload → ingestion → search → chat → evidence → provenance
+  [chromium] › golden-journey.spec.ts:82:7 › Golden Journey › register creates new user
+  [chromium] › golden-journey.spec.ts:94:7 › Golden Journey › login returns tokens
+  [chromium] › golden-journey.spec.ts:107:7 › Golden Journey › login rejects wrong password
+  [chromium] › golden-journey.spec.ts:118:7 › Golden Journey › protected endpoint rejects missing token
+  [chromium] › golden-journey.spec.ts:123:7 › Golden Journey › tenant A and B are isolated
+  [chromium] › golden-journey.spec.ts:143:7 › Golden Journey › ChatGPT connector normalizes correctly
+  [chromium] › golden-journey.spec.ts:155:7 › Golden Journey › Claude connector normalizes correctly
+  [chromium] › golden-journey.spec.ts:163:7 › Golden Journey › JSONL connector normalizes correctly
+  [chromium] › golden-journey.spec.ts:171:7 › Golden Journey › malicious content stored as data, not executed
+  [chromium] › golden-journey.spec.ts:179:7 › Golden Journey › malformed JSON returns 422
+  [chromium] › golden-journey.spec.ts:188:7 › Golden Journey › nonexistent endpoint returns 404
+  [chromium] › golden-journey.spec.ts:193:7 › Golden Journey › liveness
+  [chromium] › golden-journey.spec.ts:198:7 › Golden Journey › readiness
+  [chromium] › remaining-contracts.spec.ts:61:7 › Timeline Network Contract › Timeline API: GET /api/v1/ingest/timeline with project_id returns 200
+  [chromium] › remaining-contracts.spec.ts:71:7 › Timeline Network Contract › Timeline page renders heading
+  [chromium] › remaining-contracts.spec.ts:76:7 › Timeline Network Contract › Timeline page has empty state
+  [chromium] › remaining-contracts.spec.ts:81:7 › Timeline Network Contract › Timeline vertical slice — items are sorted by timestamp descending
+  [chromium] › remaining-contracts.spec.ts:98:7 › Timeline Network Contract › Timeline vertical slice — items contain mixed types (fact, decision, memory)
+  [chromium] › remaining-contracts.spec.ts:114:7 › Sessions Network Contract › Sessions API: GET /api/v1/sessions/ with project_id returns 200
+  [chromium] › remaining-contracts.spec.ts:123:7 › Sessions Network Contract › Sessions page renders heading
+  [chromium] › remaining-contracts.spec.ts:128:7 › Sessions Network Contract › Sessions page has empty state
+  [chromium] › remaining-contracts.spec.ts:133:7 › Sessions Network Contract › Sessions vertical slice — API returns correct schema with limit and offset
+  [chromium] › remaining-contracts.spec.ts:149:7 › Sessions Network Contract › Sessions vertical slice — empty project returns empty array
+  [chromium] › remaining-contracts.spec.ts:166:7 › Graph Network Contract › Graph API: GET /api/v1/ingest/graph returns 200
+  [chromium] › remaining-contracts.spec.ts:176:7 › Graph Network Contract › Graph page renders heading
+  [chromium] › remaining-contracts.spec.ts:181:7 › Graph Network Contract › Graph page has empty state
+  [chromium] › remaining-contracts.spec.ts:186:7 › Graph Network Contract › Graph vertical slice — API returns { nodes, edges } schema
+  [chromium] › remaining-contracts.spec.ts:203:7 › Graph Network Contract › Graph vertical slice — edges reference valid node IDs
+  [chromium] › remaining-contracts.spec.ts:223:7 › Provenance Network Contract › Provenance API: GET /api/v1/provenance/ with project_id returns 200
+  [chromium] › remaining-contracts.spec.ts:232:7 › Provenance Network Contract › Provenance page renders heading
+  [chromium] › remaining-contracts.spec.ts:237:7 › Provenance Network Contract › Provenance page has empty state
+  [chromium] › remaining-contracts.spec.ts:242:7 › Provenance Network Contract › Provenance vertical slice — API returns correct schema
+  [chromium] › remaining-contracts.spec.ts:262:7 › Provenance Network Contract › Provenance vertical slice — requires authentication
+  [chromium] › remaining-contracts.spec.ts:270:7 › Provenance Detail and Chain › Provenance detail endpoint returns record by ID
+  [chromium] › remaining-contracts.spec.ts:289:7 › Provenance Detail and Chain › Provenance filters by session_id
+  [chromium] › remaining-contracts.spec.ts:304:7 › Provenance Detail and Chain › Provenance memory expansion endpoint exists
+  [chromium] › remaining-contracts.spec.ts:319:7 › Provenance Detail and Chain › Provenance detail returns 404 for unknown ID
+  [chromium] › remaining-contracts.spec.ts:330:7 › Graph Deep Certification › Graph supports project_id filtering
+  [chromium] › remaining-contracts.spec.ts:340:7 › Graph Deep Certification › Graph supports include_historical param
+  [chromium] › remaining-contracts.spec.ts:351:7 › Graph Deep Certification › Graph nodes contain required backend fields
+  [chromium] › remaining-contracts.spec.ts:368:7 › Graph Deep Certification › Graph edges contain required backend fields
+  [chromium] › remaining-contracts.spec.ts:385:7 › Graph Deep Certification › Graph node_type values are from backend vocabulary
+  [chromium] › remaining-contracts.spec.ts:400:7 › Graph Deep Certification › Graph empty project returns empty nodes and edges
+  [chromium] › remaining-contracts.spec.ts:414:7 › Graph Deep Certification › Graph rejects without auth
+  [chromium] › remaining-contracts.spec.ts:422:7 › Graph UI Interactions › Graph empty state renders when no data exists
+  [chromium] › remaining-contracts.spec.ts:430:7 › Graph UI Interactions › Graph page renders detail panel or empty state
+  [chromium] › remaining-contracts.spec.ts:436:7 › Graph UI Interactions › Graph page shows node type badge when nodes exist
+  [chromium] › remaining-contracts.spec.ts:446:7 › Graph UI Interactions › Graph empty project has no horizontal overflow
+  [chromium] › remaining-contracts.spec.ts:455:7 › Cross-Page Knowledge Chain › Chain: Search → Memory → Provenance — memory IDs in search results
+  [chromium] › remaining-contracts.spec.ts:471:7 › Cross-Page Knowledge Chain › Chain: Session → Timeline — session created_at appears in timeline
+  [chromium] › remaining-contracts.spec.ts:492:7 › Cross-Page Knowledge Chain › Chain: Memory → Facts → Decisions — identifiers are distinct types
+  [chromium] › remaining-contracts.spec.ts:510:7 › Sessions Project-Filter Honesty › Sessions list endpoint does NOT filter by project_id on backend
+  [chromium] › remaining-contracts.spec.ts:537:7 › Sessions Project-Filter Honesty › Sessions page communicates workspace scope, not project scope
+  [chromium] › remaining-contracts.spec.ts:546:7 › Responsive Certification › Timeline heading visible at desktop (1440x900)
+  [chromium] › remaining-contracts.spec.ts:552:7 › Responsive Certification › Timeline heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:558:7 › Responsive Certification › Sessions heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:564:7 › Responsive Certification › Graph heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:570:7 › Responsive Certification › Dashboard heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:576:7 › Responsive Certification › No horizontal overflow at mobile (390x844) on Timeline
+  [chromium] › remaining-contracts.spec.ts:584:7 › Responsive Certification › No horizontal overflow at mobile (390x844) on Dashboard
+  [chromium] › remaining-contracts.spec.ts:595:7 › Accessibility Regression › Sessions page has correct heading hierarchy
+  [chromium] › remaining-contracts.spec.ts:601:7 › Accessibility Regression › Graph page has correct heading hierarchy
+  [chromium] › remaining-contracts.spec.ts:607:7 › Accessibility Regression › Provenance page has correct heading hierarchy
+  [chromium] › remaining-contracts.spec.ts:613:7 › Accessibility Regression › Timeline page has correct heading hierarchy
+  [chromium] › remaining-contracts.spec.ts:619:7 › Accessibility Regression › No horizontal overflow on Sessions page
+  [chromium] › remaining-contracts.spec.ts:625:7 › Accessibility Regression › No horizontal overflow on Graph page
+  [chromium] › remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order
+  [chromium] › remaining-contracts.spec.ts:653:7 › Keyboard Accessibility › Login form: Enter submits from password field
+  [chromium] › remaining-contracts.spec.ts:667:7 › Keyboard Accessibility › Chat page: Enter sends message, Shift+Enter adds line
+  [chromium] › remaining-contracts.spec.ts:681:7 › Keyboard Accessibility › Sidebar: Tab navigates to all navigation links
+  [chromium] › remaining-contracts.spec.ts:689:7 › Keyboard Accessibility › Modal (evidence dialog): Escape closes modal, focus returns to trigger
+  [chromium] › remaining-contracts.spec.ts:706:7 › Visual Evidence Screenshots › Dashboard renders correctly at desktop
+  [chromium] › remaining-contracts.spec.ts:714:7 › Visual Evidence Screenshots › Dashboard renders correctly at mobile
+  [chromium] › remaining-contracts.spec.ts:722:7 › Visual Evidence Screenshots › Timeline renders correctly at desktop
+  [chromium] › remaining-contracts.spec.ts:730:7 › Visual Evidence Screenshots › Timeline renders correctly at mobile
+  [chromium] › remaining-contracts.spec.ts:738:7 › Visual Evidence Screenshots › Sessions renders correctly at tablet
+  [chromium] › remaining-contracts.spec.ts:746:7 › Visual Evidence Screenshots › Graph renders correctly at desktop
+  [chromium] › remaining-contracts.spec.ts:754:7 › Visual Evidence Screenshots › Graph renders correctly at mobile
+  [chromium] › remaining-contracts.spec.ts:762:7 › Visual Evidence Screenshots › Memory page renders correctly at desktop
+  [chromium] › remaining-contracts.spec.ts:770:7 › Visual Evidence Screenshots › Settings renders correctly at desktop
+  [chromium] › remaining-contracts.spec.ts:781:7 › Network and Console Cleanliness › Memory page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:790:7 › Network and Console Cleanliness › Facts page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:799:7 › Network and Console Cleanliness › Decisions page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:808:7 › Network and Console Cleanliness › Ingest page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:817:7 › Network and Console Cleanliness › Settings page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:826:7 › Network and Console Cleanliness › Provenance page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:835:7 › Network and Console Cleanliness › Session detail page loads with no console errors
+  [chromium] › remaining-contracts.spec.ts:849:7 › State Semantics › Facts page shows confidence and evidence badge
+  [chromium] › remaining-contracts.spec.ts:855:7 › State Semantics › Decisions page shows confidence and temporal badge
+  [chromium] › remaining-contracts.spec.ts:861:7 › State Semantics › Provenance page shows model, provider, latency, tokens
+  [chromium] › remaining-contracts.spec.ts:867:7 › State Semantics › Timeline shows item_type icons and temporal status badges
+  [chromium] › remaining-contracts.spec.ts:873:7 › State Semantics › Session detail shows role icons (user/bot) and timestamps
+  [chromium] › remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Memory heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Memory no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Memory heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Memory heading visible at desktop (1280x720)
+  [chromium] › remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Facts heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Facts no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Facts heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Facts heading visible at desktop (1280x720)
+  [chromium] › remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Decisions heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Decisions no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Decisions heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Decisions heading visible at desktop (1280x720)
+  [chromium] › remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Ingest heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Ingest no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Ingest heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Ingest heading visible at desktop (1280x720)
+  [chromium] › remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Provenance heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Provenance no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Provenance heading visible at tablet (768x1024)
+  [chromium] › remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Provenance heading visible at desktop (1280x720)
+  [chromium] › remaining-contracts.spec.ts:920:7 › Expanded Responsive Coverage › Settings heading visible at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:926:7 › Expanded Responsive Coverage › Settings no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:934:7 › Expanded Responsive Coverage › Dashboard no horizontal overflow at 1280x720
+  [chromium] › remaining-contracts.spec.ts:942:7 › Expanded Responsive Coverage › Chat no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:950:7 › Expanded Responsive Coverage › Search no horizontal overflow at mobile (390x844)
+  [chromium] › remaining-contracts.spec.ts:961:7 › Identifier Continuity Audit › Project IDs are consistent across navigation
+  [chromium] › remaining-contracts.spec.ts:972:7 › Identifier Continuity Audit › Memory IDs returned by API match frontend display format
+  [chromium] › remaining-contracts.spec.ts:985:7 › Identifier Continuity Audit › Session IDs are stable across list and detail views
+  [chromium] › remaining-contracts.spec.ts:999:7 › Identifier Continuity Audit › Graph node IDs are stable and referenced by edges
+  [chromium] › remaining-contracts.spec.ts:1017:7 › Full Regression — Core Pages Render › Dashboard renders without errors
+  [chromium] › remaining-contracts.spec.ts:1022:7 › Full Regression — Core Pages Render › Projects page renders without errors
+  [chromium] › remaining-contracts.spec.ts:1027:7 › Full Regression — Core Pages Render › Project Search renders without errors
+  [chromium] › remaining-contracts.spec.ts:1032:7 › Full Regression — Core Pages Render › Project Memory renders without errors
+  [chromium] › remaining-contracts.spec.ts:1037:7 › Full Regression — Core Pages Render › Project Facts renders without errors
+  [chromium] › remaining-contracts.spec.ts:1042:7 › Full Regression — Core Pages Render › Project Decisions renders without errors
+  [chromium] › remaining-contracts.spec.ts:1047:7 › Full Regression — Core Pages Render › Project Timeline renders without errors
+  [chromium] › remaining-contracts.spec.ts:1052:7 › Full Regression — Core Pages Render › Project Graph renders without errors
+  [chromium] › remaining-contracts.spec.ts:1057:7 › Full Regression — Core Pages Render › Project Provenance renders without errors
+  [chromium] › remaining-contracts.spec.ts:1062:7 › Full Regression — Core Pages Render › Project Sessions renders without errors
+  [chromium] › remaining-contracts.spec.ts:1067:7 › Full Regression — Core Pages Render › Project Ingest renders without errors
+  [chromium] › remaining-contracts.spec.ts:1072:7 › Full Regression — Core Pages Render › Settings renders without errors
+  [chromium] › search-chat-certification.spec.ts:68:7 › Search Browser Certification › Search page renders heading and input
+  [chromium] › search-chat-certification.spec.ts:73:7 › Search Browser Certification › Search input has correct placeholder
+  [chromium] › search-chat-certification.spec.ts:79:7 › Search Browser Certification › Search filter select is visible
+  [chromium] › search-chat-certification.spec.ts:84:7 › Search Browser Certification › Search submit button is visible
+  [chromium] › search-chat-certification.spec.ts:89:7 › Search Browser Certification › Search API contract: POST /api/v1/ingest/search returns 200
+  [chromium] › search-chat-certification.spec.ts:99:7 › Search Browser Certification › Search with memory_type filter in query params
+  [chromium] › search-chat-certification.spec.ts:108:7 › Search Browser Certification › Search empty project returns empty results
+  [chromium] › search-chat-certification.spec.ts:117:7 › Search Browser Certification › Search rejects without auth
+  [chromium] › search-chat-certification.spec.ts:122:7 › Search Browser Certification › Search console clean on empty results page
+  [chromium] › search-chat-certification.spec.ts:133:7 › Search Browser Certification › Search responsive at 768px
+  [chromium] › search-chat-certification.spec.ts:139:7 › Search Browser Certification › Search page has error state component (ErrorAlert import)
+  [chromium] › search-chat-certification.spec.ts:158:7 › Chat Browser Certification › Chat page renders heading and textarea
+  [chromium] › search-chat-certification.spec.ts:164:7 › Chat Browser Certification › Chat page shows empty state
+  [chromium] › search-chat-certification.spec.ts:169:7 › Chat Browser Certification › Chat API contract: POST /api/v1/chat/stream returns SSE
+  [chromium] › search-chat-certification.spec.ts:185:7 › Chat Browser Certification › Chat rejects without auth
+  [chromium] › search-chat-certification.spec.ts:194:7 › Chat Browser Certification › Chat sends message and sees response
+  [chromium] › search-chat-certification.spec.ts:205:7 › Chat Browser Certification › Chat console clean on page load
+  [chromium] › search-chat-certification.spec.ts:216:7 › Chat Browser Certification › Chat responsive at 768px
+  [chromium] › search-chat-certification.spec.ts:222:7 › Chat Browser Certification › Chat page renders with evidence button support
+  [chromium] › ui-certification.spec.ts:73:7 › UI Browser Certification - Authenticated › Dashboard renders with stats and project card
+  [chromium] › ui-certification.spec.ts:78:7 › UI Browser Certification - Authenticated › Dashboard creates project via New Project form
+  [chromium] › ui-certification.spec.ts:87:7 › UI Browser Certification - Authenticated › Projects page lists projects
+  [chromium] › ui-certification.spec.ts:93:7 › UI Browser Certification - Authenticated › Chat page renders with empty state
+  [chromium] › ui-certification.spec.ts:99:7 › UI Browser Certification - Authenticated › Chat sends message and receives response
+  [chromium] › ui-certification.spec.ts:119:7 › UI Browser Certification - Authenticated › Search page renders
+  [chromium] › ui-certification.spec.ts:125:7 › UI Browser Certification - Authenticated › Memory page renders
+  [chromium] › ui-certification.spec.ts:130:7 › UI Browser Certification - Authenticated › Settings page renders
+  [chromium] › ui-certification.spec.ts:135:7 › UI Browser Certification - Authenticated › Ingest page renders with upload form
+  [chromium] › ui-certification.spec.ts:141:7 › UI Browser Certification - Authenticated › Facts page renders
+  [chromium] › ui-certification.spec.ts:146:7 › UI Browser Certification - Authenticated › Decisions page renders
+  [chromium] › ui-certification.spec.ts:159:7 › Search Network Contract › Search sends POST /api/v1/ingest/search with query and limit params
+  [chromium] › ui-certification.spec.ts:181:7 › Memory Network Contract › Memory loads via GET /api/v1/memory/ with project_id param
+  [chromium] › ui-certification.spec.ts:194:7 › Memory Network Contract › Memory page has filter and structure
+  [chromium] › ui-certification.spec.ts:201:7 › Memory Network Contract › Memory vertical slice — API returns correct schema with project_id
+  [chromium] › ui-certification.spec.ts:220:7 › Memory Network Contract › Memory vertical slice — filter by memory_type param
+  [chromium] › ui-certification.spec.ts:229:7 › Memory Network Contract › Memory vertical slice — filter by temporal_status param
+  [chromium] › ui-certification.spec.ts:241:7 › Memory Network Contract › Memory vertical slice — page renders empty state on fresh project
+  [chromium] › ui-certification.spec.ts:272:7 › Facts Network Contract › Facts loads via GET /api/v1/ingest/facts with project_id param
+  [chromium] › ui-certification.spec.ts:285:7 › Facts Network Contract › Facts page has empty state and subject-predicate-object display
+  [chromium] › ui-certification.spec.ts:298:7 › Decisions Network Contract › Decisions loads via GET /api/v1/ingest/decisions with project_id param
+  [chromium] › ui-certification.spec.ts:311:7 › Decisions Network Contract › Decisions page has empty state
+Total: 204 tests in 9 files

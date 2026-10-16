@@ -244,6 +244,15 @@ class Memory(Base):
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     agent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("sources.id"), nullable=True, index=True
+    )
+    source_session_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
+    source_message_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
     project_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("projects.id"), nullable=True, index=True
     )
@@ -251,6 +260,10 @@ class Memory(Base):
     content: Mapped[str] = mapped_column(Text)
     extra_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    embedding_dimension: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    embedding_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    embedded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     temporal_status: Mapped[str] = mapped_column(String(50), default="current", index=True)
     confidence: Mapped[float] = mapped_column(Float, default=0.7)
     authority: Mapped[float] = mapped_column(Float, default=1.0)
@@ -264,6 +277,56 @@ class Memory(Base):
     )
 
     tenant: Mapped["Tenant"] = relationship("Tenant")
+
+
+# ── Phase 4: Execution Context ──────────────────────────────────────────────
+
+
+class ExecutionContext:
+    """Server-derived execution context threaded through all write paths.
+
+    Derived from the authenticated request + validated Agent/Run rows.
+    Never trusted verbatim from client JSON.
+    """
+
+    __slots__ = (
+        "tenant_id", "workspace_id", "project_id",
+        "user_id", "agent_id", "agent_version_id",
+        "run_id", "trace_id", "correlation_id",
+    )
+
+    def __init__(
+        self,
+        tenant_id: str,
+        workspace_id: str,
+        project_id: str | None = None,
+        user_id: str | None = None,
+        agent_id: str | None = None,
+        agent_version_id: str | None = None,
+        run_id: str | None = None,
+        trace_id: str | None = None,
+        correlation_id: str | None = None,
+    ):
+        self.tenant_id = tenant_id
+        self.workspace_id = workspace_id
+        self.project_id = project_id
+        self.user_id = user_id
+        self.agent_id = agent_id
+        self.agent_version_id = agent_version_id
+        self.run_id = run_id
+        self.trace_id = trace_id
+        self.correlation_id = correlation_id
+
+    def to_dict(self) -> dict:
+        return {k: getattr(self, k) for k in self.__slots__}
+
+    def __repr__(self) -> str:
+        return (
+            f"ExecutionContext(tenant={self.tenant_id[:8]}, "
+            f"workspace={self.workspace_id[:8]}, "
+            f"agent={self.agent_id[:8] if self.agent_id else 'none'}, "
+            f"run={self.run_id[:8] if self.run_id else 'none'})"
+        )
 
 
 class IngestJob(Base):
@@ -346,8 +409,6 @@ class Source(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
-    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-
     normalized_messages: Mapped[list["NormalizedMessage"]] = relationship(
         "NormalizedMessage",
         back_populates="source",
@@ -360,7 +421,6 @@ class Source(Base):
     graph_edges: Mapped[list["GraphEdge"]] = relationship(
         "GraphEdge", back_populates="source"
     )
-
     __table_args__ = (
         Index("ix_sources_workspace_tenant", "workspace_id", "tenant_id"),
         Index("ix_sources_project_status", "project_id", "status"),
@@ -835,4 +895,259 @@ class AuditEvent(Base):
         Index("ix_audit_events_principal_timestamp", "principal_id", "timestamp"),
         Index("ix_audit_events_resource_timestamp", "resource_type", "timestamp"),
         Index("ix_audit_events_correlation", "correlation_id", "timestamp"),
+    )
+
+
+# ── Phase 4: Execution Identity Foundation ──────────────────────────────────
+
+
+class Agent(Base):
+    """Represents an AI agent instance (e.g., a SwarmVault assistant)."""
+
+    __tablename__ = "agents"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id"), nullable=False, index=True
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version: Mapped[str] = mapped_column(String(50), default="1.0.0")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    runs: Mapped[list["Run"]] = relationship("Run", back_populates="agent")
+
+
+class AgentVersion(Base):
+    """Tracks deployed versions of an agent for rollback and audit."""
+
+    __tablename__ = "agent_versions"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agents.id"), nullable=False, index=True
+    )
+    version: Mapped[str] = mapped_column(String(50))
+    config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    prompt_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    deployed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    deployed_by: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True
+    )
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    agent: Mapped["Agent"] = relationship("Agent", back_populates="versions")
+    runs: Mapped[list["Run"]] = relationship("Run", back_populates="agent_version")
+
+
+# Add back_populates to Agent
+Agent.versions: Mapped[list["AgentVersion"]] = relationship(  # type: ignore[no-redef]
+    "AgentVersion", back_populates="agent"
+)
+
+
+class Run(Base):
+    """Represents a single execution run of an agent."""
+
+    __tablename__ = "runs"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id"), nullable=False, index=True
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id"), nullable=False, index=True
+    )
+    project_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("projects.id"), nullable=True, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agents.id"), nullable=False, index=True
+    )
+    agent_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("agent_versions.id"), nullable=True
+    )
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True, index=True
+    )
+    trace_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
+    correlation_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
+    status: Mapped[str] = mapped_column(String(20), default="running")
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    run_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    agent: Mapped["Agent"] = relationship("Agent", back_populates="runs")
+    agent_version: Mapped["AgentVersion | None"] = relationship(
+        "AgentVersion", back_populates="runs"
+    )
+    steps: Mapped[list["RunStep"]] = relationship(
+        "RunStep", back_populates="run", cascade="all, delete-orphan"
+    )
+
+
+class RunStep(Base):
+    """A single step within an agent run (e.g., a tool call or LLM turn)."""
+
+    __tablename__ = "run_steps"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("runs.id"), nullable=False, index=True
+    )
+    step_type: Mapped[str] = mapped_column(
+        String(30), nullable=False
+    )  # llm_call | tool_execution | retrieval | system
+    step_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    parent_step_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
+    input_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    output_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    run: Mapped["Run"] = relationship("Run", back_populates="steps")
+    tool_executions: Mapped[list["ToolExecution"]] = relationship(
+        "ToolExecution", back_populates="step", cascade="all, delete-orphan"
+    )
+
+
+class ToolExecution(Base):
+    """Records a single tool/function call within a run step."""
+
+    __tablename__ = "tool_executions"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("runs.id"), nullable=False, index=True
+    )
+    step_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("run_steps.id"), nullable=False, index=True
+    )
+    tool_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    tool_input: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    tool_output: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    step: Mapped["RunStep"] = relationship("RunStep", back_populates="tool_executions")
+
+
+# ── Phase 5: Contradiction Detection ───────────────────────────────────────
+
+
+class ContradictionType(str, enum.Enum):
+    VALUE_CONFLICT = "VALUE_CONFLICT"
+    TEMPORAL_CONFLICT = "TEMPORAL_CONFLICT"
+    RELATIONSHIP_CONFLICT = "RELATIONSHIP_CONFLICT"
+    SOURCE_CONFLICT = "SOURCE_CONFLICT"
+    DIRECT_NEGATION = "DIRECT_NEGATION"
+
+
+class ContradictionStatus(str, enum.Enum):
+    DETECTED = "DETECTED"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    RESOLVED_A = "RESOLVED_A"
+    RESOLVED_B = "RESOLVED_B"
+    BOTH_VALID = "BOTH_VALID"
+    DISMISSED = "DISMISSED"
+
+
+class MemoryContradiction(Base):
+    """Records a detected contradiction between facts or decisions."""
+
+    __tablename__ = "memory_contradictions"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id"), nullable=False
+    )
+    fact_a_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    fact_b_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    detected_by_agent_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("agents.id"), nullable=True, index=True
+    )
+    detected_by_run_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("runs.id"), nullable=True, index=True
+    )
+    contradiction_type: Mapped[str] = mapped_column(
+        String(30), default=ContradictionType.VALUE_CONFLICT.value
+    )
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    status: Mapped[str] = mapped_column(
+        String(20), default=ContradictionStatus.UNDER_REVIEW.value
+    )
+    detected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolved_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("ix_contradictions_workspace", "workspace_id", "status"),
+        UniqueConstraint(
+            "workspace_id", "fact_a_id", "fact_b_id",
+            name="uq_contradiction_pair"
+        ),
     )

@@ -13,11 +13,27 @@ Autonomous Bug Fix, Validation & Architecture Reconciliation
 - npm: 11.6.0
 - Working tree: 5 modified files, 1 untracked file (frontend/diag-test.mjs), ~50 untracked docs
 
+## Reactivation Prompt Status (2026-09-24)
+
+### Completed
+- Item 1: Removed recovery artifact `_r3-route-sweep.spec.ts` (22 phantom tests)
+- Item 2: Authoritative count: **203 tests** in 9 spec files (Playwright --list)
+- Item 3: Fresh-DB run — **P0 finding**: 198/203 passed, not 222/225
+  - Suite depends on accumulated DB state; prior certification numbers irreproducible
+- Item 4: Keyboard test — corrected to test-environment defect (nextjs-portal, dev-only)
+  - Fix: `playwright.config.ts` now uses `npm run build && npm run start` (production mode)
+- Diagnostic logging removed from `remaining-contracts.spec.ts`
+- `.env` restored to original DATABASE_URL
+
+### Pending
+- Certification run on production build mode (`next start`) — Bash classifier unavailable
+- Phase 0 baseline gate update in Memory Intelligence prompt (222/225 → actual number)
+
 ## Current Phase
-PHASE 0 — Finding Validation & Baseline
+PHASE 0 — Finding Validation & Baseline (reactivation prompt items 1-4 complete)
 
 ## Overall Certification
-NOT CERTIFIED
+NOT CERTIFIED — awaiting production-build certification run
 
 ## Phase Status
 

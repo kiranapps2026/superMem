@@ -35,11 +35,16 @@ frontend/e2e/global-setup.ts
 # OS
 Thumbs.db
 .DS_Store
+NUL
 
 # Environment
 .env
 .env.local
+.env.bak
 .env.*.local
 
 # Misc
 *.log
+
+# Claude Code (local to this machine only)
+.claude/

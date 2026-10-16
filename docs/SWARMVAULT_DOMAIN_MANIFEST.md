@@ -1,7 +1,7 @@
 # SwarmVault Domain Manifest
 
-**Version:** 1.0.0 — Corrected Supersedes v0
-**Date:** 2026-09-24
+**Version:** 1.1.0
+**Date:** 2026-09-25
 **Branch:** recovery/restore-2026-09-24
 **Authority:** Source code is the single source of truth. Documents are authoritative only when they match source.
 
@@ -24,13 +24,15 @@
 
 ## 1. Executive Overview
 
-SwarmVault is a multi-tenant AI knowledge platform. It ingests conversations, runs a 6-stage extraction pipeline, stores facts/decisions/graph entities/embeddings, and surfaces them through 18 frontend pages. The backend is a FastAPI service (279 lines main, 838 lines models, 602 lines schemas). The frontend is Next.js 15 with App Router.
+SwarmVault is a multi-tenant AI knowledge platform. It ingests conversations, runs a 6-stage extraction pipeline, stores facts/decisions/graph entities/embeddings, and surfaces them through 21 frontend pages. The backend is a FastAPI service (279 lines main, 835 lines models, 602 lines schemas). The frontend is Next.js 15 with App Router.
 
-**Current state (2026-09-24):**
-- Backend: 670/671 tests pass (1 environmental), 81 endpoints, 22 routes
-- Frontend: 203 E2E tests, 22 routes, tsc 0 errors, lint 0 errors
-- Database: PostgreSQL with 18 tables, 12 migrations (001-012)
+**Current state (2026-09-25):**
+- Backend: 772/773 tests pass (1 environmental), 78 router endpoints + 3 health endpoints, 21 pages
+- Frontend: 9 E2E test files, 21 pages, TypeScript 0 errors
+- Database: PostgreSQL with 24 tables, 13 migrations (001-013)
 - Pipeline: M0→M1→M2→M3→M4→M5, 6 stages
+- Phase 3: M5 reranking (46 tests, shadow mode default)
+- Phase 5: Contradiction detection (34 tests, predicate policy engine)
 
 ---
 
@@ -90,14 +92,15 @@ Tenant ──┬── Workspace ──┬── WorkspaceMember ──┬──
 | **Policy** | `policies` | `id` | `workspace_id` | Authorization rule | app/models.py:728 |
 | **PolicyVersion** | `policy_versions` | `id` | `policy_id` | Policy history | app/models.py:762 |
 | **AuditEvent** | `audit_events` | `id` | `workspace_id` | Security log | app/models.py:789 |
+| **MemoryContradiction** | `memory_contradictions` | `id` | `workspace_id` | Contradiction record | app/models.py:841 |
 
-**Total: 23 tables, 12 migrations.**
+**Total: 24 tables, 13 migrations (001-013).**
 
 ### 2.3 Invariants
 
 | Invariant | Enforcement | Source File |
 |---|---|---|
-| Users must verify email before login | `email_verified` boolean check | app/middleware/auth.py:17 |
+| User active | `is_active` boolean check | app/middleware/auth.py:45 |
 | Workspace slugs unique within tenant | SQLAlchemy UniqueConstraint | app/models.py:48 |
 | User emails unique globally | Unique index | app/models.py:71 |
 | Fact temporal_status = "current" for dedup | WHERE temporal_status = "current" | app/services/pipeline.py:222 |
@@ -186,21 +189,21 @@ OUTPUT (source_id, session_id, facts_created, decisions_created, graph_nodes_cre
 | Module | Prefix | Endpoints | Auth | RBAC | File |
 |---|---|---|---|---|---|
 | **Auth** | `/api/v1` | 6 | Public | — | app/api/auth.py |
-| **Workspace** | `/api/v1` | 4 | Bearer | — | app/api/workspace.py |
-| **Projects** | `/api/v1` | 3 | Bearer | — | app/api/projects.py |
-| **Sessions** | `/api/v1` | 3 | Bearer | — | app/api/sessions.py |
-| **Chat** | `/api/v1` | 3 | Bearer | — | app/api/chat.py |
-| **Memory** | `/api/v1` | 2 | Bearer | — | app/api/memory.py |
-| **Ingest** | `/api/v1` | 3 | Bearer | — | app/api/ingest.py |
-| **Provenance** | `/api/v1` | 2 | Bearer | — | app/api/provenance.py |
+| **Workspace** | `/api/v1` | 14 | Bearer | — | app/api/workspace.py |
+| **Projects** | `/api/v1` | 5 | Bearer | — | app/api/projects.py |
+| **Sessions** | `/api/v1` | 6 | Bearer | — | app/api/sessions.py |
+| **Chat** | `/api/v1` | 2 | Bearer | — | app/api/chat.py |
+| **Memory** | `/api/v1` | 6 | Bearer | — | app/api/memory.py |
+| **Ingest** | `/api/v1` | 14 | Bearer | — | app/api/ingest.py |
+| **Provenance** | `/api/v1` | 3 | Bearer | — | app/api/provenance.py |
 | **Dashboard** | `/api/v1` | 2 | Bearer | — | app/api/dashboard.py |
-| **Feedback** | `/api/v1` | 2 | Bearer | — | app/api/feedback.py |
-| **API Keys** | `/api/v1` | 2 | Bearer | — | app/api/api_keys.py |
-| **Storage** | `/api/v1` | 2 | Bearer | — | app/api/storage.py |
-| **Policy** | `/api/v1` | 2 | Bearer | — | app/api/policy.py |
-| **Audit** | `/api/v1` | 2 | Bearer | — | app/api/audit.py |
+| **Feedback** | `/api/v1` | 3 | Bearer | — | app/api/feedback.py |
+| **API Keys** | `/api/v1` | 4 | Bearer | — | app/api/api_keys.py |
+| **Storage** | `/api/v1` | 3 | Bearer | — | app/api/storage.py |
+| **Policy** | `/api/v1` | 7 | Bearer | — | app/api/policy.py |
+| **Audit** | `/api/v1` | 3 | Bearer | — | app/api/audit.py |
 
-**Total: 81 endpoints across 14 routers.**
+**Total: 78 endpoints across 14 routers (+ 3 health endpoints).**
 
 ### 4.2 Endpoint Index (corrected)
 
@@ -272,7 +275,7 @@ All `/api/v1/*` endpoints require Bearer JWT. Auth is OAuth2 Password Bearer (no
 |---|---|---|---|
 | **Multi-tenant** | Stable | app/models.py:18 | Tenant→Workspace→Member hierarchy |
 | **JWT Auth** | Stable | app/api/auth.py | Registration, login, refresh, logout |
-| **Email Verification** | Stable | app/middleware/auth.py:17 | Gate on login |
+| **Email Verification** | Partial | app/models.py:79 | Field exists but no verification flow implemented |
 | **RBAC** | Stable | app/middleware/rbac.py | OWNER, ADMIN, MEMBER, VIEWER |
 | **Rate Limiting** | Stable | app/middleware/rate_limit.py | In-memory sliding window |
 | **Request ID** | Stable | app/main.py:22 | X-Request-ID injection |
@@ -309,7 +312,7 @@ All `/api/v1/*` endpoints require Bearer JWT. Auth is OAuth2 Password Bearer (no
 | Redis rate limiting | Not present | In-memory only |
 | Multi-region | Not present | Single DB |
 | Webhooks | Not present | No outbound |
-| Real-time/SSE | Not present | No push |
+| Real-time/SSE | Present | useSSE.tsx hook + /api/v1/chat/stream endpoint | Chat streaming via fetch + SSE |
 | Encryption at rest | Not present | DB-level only |
 
 ---
@@ -574,7 +577,7 @@ Audit events are buffered per-request and flushed by `AuditPersistenceMiddleware
 | `/projects/{id}/settings` | ProjectSettingsPage | Project config | frontend/src/app/projects/[id]/settings/page.tsx |
 | `/projects/{id}/timeline` | TimelinePage | Chronological view | frontend/src/app/projects/[id]/timeline/page.tsx |
 
-**Total: 22 routes (10 static, 12 dynamic).**
+**Total: 21 pages (10 static, 11 dynamic).**
 
 ### 9.2 Frontend Feature Matrix
 
@@ -639,7 +642,7 @@ Metrics disabled by default (`ENABLE_METRICS=false`). No Prometheus endpoint.
 
 4. **Rate Limiter**: v0 said "Redis-backed". Current code (app/middleware/rate_limit.py) is in-memory only, with a comment that production should replace with Redis.
 
-5. **Router count**: v0 said "81 endpoints across 14 routers". Current code (app/main.py:140-156) has 14 router includes. Confirmed correct.
+5. **Router count**: v0 said "81 endpoints across 14 routers". Current code (app/main.py:140-156) has 14 router includes with 78 endpoints. Updated to reflect corrected counts: workspace (14), projects (5), sessions (6), chat (2), memory (6), ingest (14), provenance (3), dashboard (2), feedback (3), api_keys (4), storage (3), policy (7), audit (3).
 
 6. **R5 items**: v0 listed R5-1, R5-2, R5-3, R5-4. All four items are complete (commits c6c34d9, d830f45).
 
@@ -651,14 +654,14 @@ Metrics disabled by default (`ENABLE_METRICS=false`). No Prometheus endpoint.
 
 | Manifest Section | Source File | Authority |
 |---|---|---|
-| Entity catalog | app/models.py (838 lines, 23 classes) | Single source of truth |
+| Entity catalog | app/models.py (835 lines, 23 classes) | Single source of truth |
 | Pipeline stages | app/services/pipeline.py (238 lines) | Single source of truth |
 | API routes | app/main.py:140-156 | Single source of truth |
 | Security headers | app/main.py:48-82 | Single source of truth |
 | Middleware stack | app/main.py:22-228 | Single source of truth |
 | Rate limiting | app/middleware/rate_limit.py | Single source of truth |
 | Audit events | app/services/audit/service.py | Single source of truth |
-| Database tables | app/models.py (838 lines, 23 classes) | Single source of truth |
+| Database tables | app/models.py (835 lines, 23 classes) | Single source of truth |
 | Migrations | alembic/versions/ | Single source of truth |
 | Frontend pages | frontend/src/app/ | Single source of truth |
 | LLM providers | app/services/llm.py | Single source of truth |

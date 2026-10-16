@@ -73,12 +73,17 @@ async def process_chat(
         item_id = str(item.id)
         memory_ids_used.append(item_id)
         content_preview = getattr(item, 'content', '')[:200]
-        retrieval_sources.append({
+        source = {
             "memory_id": item_id,
             "content": content_preview,
             "item_type": r.item_type,
             "score": round(r.score, 3),
-        })
+        }
+        # Phase 3: include reranking explainability fields when present
+        if hasattr(r, "retrieval_score"):
+            source["retrieval_score"] = round(r.retrieval_score, 3)
+            source["reranker_score"] = round(r.reranker_score, 3)
+        retrieval_sources.append(source)
 
     user_message_preview = user_message[:500] if user_message else None
 

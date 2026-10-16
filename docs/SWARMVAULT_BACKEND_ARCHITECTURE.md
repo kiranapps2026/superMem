@@ -33,7 +33,7 @@
 │                                                                              │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────────┐  │
 │  │   FastAPI    │───▶│  Middleware  │───▶│          Router Layer        │  │
-│  │   App        │    │   Stack       │    │  (14 routers, 81 endpoints)  │  │
+│  │   App        │    │   Stack       │    │  (14 routers, 78 endpoints)  │  │
 │  └──────────────┘    └──────────────┘    └──────────────────────────────┘  │
 │         │                    │                       │                     │
 │         │                    │                       ▼                     │
@@ -116,7 +116,7 @@ FastAPI(app)
   │   ├── 500 SQLAlchemyError → sanitized
   │   └── 500 Exception → sanitized
   │
-  ├── API Routers (14 routers, 81 endpoints)
+  ├── API Routers (14 routers, 78 endpoints)
   │   ├── auth.router
   │   ├── workspace.router
   │   ├── projects.router
@@ -537,9 +537,9 @@ Enabled only in development (`environment != "production"`).
 | **M3 Temporal** | app/services/m3_temporal.py | 202 | models | Fact supersession |
 | **M4 Graph** | app/services/m4_graph.py | 192 | models | Entity/edge persistence |
 | **M5 Retrieval** | app/services/m5_retrieval.py | 294 | memory, retrieval | Hybrid search for chat |
-| **Memory** | app/services/memory.py | 1045 | models, llm | Vector embeddings, CRUD |
+| **Memory** | app/services/memory.py | 608 | models, llm, audit | Vector embeddings, CRUD, provenance |
 | **Retrieval** | app/services/retrieval.py | 121 | models | BM25 + semantic + graph |
-| **Chat Orchestrator** | app/services/chat_orchestrator.py | 152 | llm, m5, models | End-to-end chat flow |
+| **Chat Orchestrator** | app/services/chat_orchestrator.py | 86 | llm, m5, models | End-to-end chat flow |
 | **Audit** | app/services/audit.py | 305 | models | Event buffering, persistence |
 | **Object Storage** | app/services/object_storage.py | 141 | s3, minio | Unified storage interface |
 | **Object Storage S3** | app/services/object_storage_s3.py | 84 | boto3 | AWS S3 backend |
@@ -739,7 +739,7 @@ List endpoints return paginated results. See `app/schemas.py` for `PaginationPar
 | Config | app/core/config.py | 166 | Single source of truth |
 | Audit | app/services/audit/service.py | 305 | Single source of truth |
 | Security | app/core/security.py | 37 | Single source of truth |
-| Models | app/models.py | 838 | Single source of truth |
+| Models | app/models.py | 835 | Single source of truth |
 | Schemas | app/schemas.py | 602 | Single source of truth |
 | Chat orchestrator | app/services/chat_orchestrator.py | 152 | Single source of truth |
 | Retrieval | app/services/m5_retrieval.py | 294 | Single source of truth |

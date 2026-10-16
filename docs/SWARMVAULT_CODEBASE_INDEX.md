@@ -11,21 +11,22 @@
 
 | Metric | Value |
 |---|---|
-| Total source files (Python) | 72 |
-| Total source files (TypeScript/TSX) | 54 |
-| Total test files (Python) | 40 |
-| Total test files (Playwright) | 10 |
+| Total source files (Python) | 53 |
+| Total source files (TypeScript/TSX) | 56 |
+| Total test files (Python) | 39 |
+| Total test files (Playwright) | 9 |
 | Total documentation files | 80+ |
-| Python lines of code | 22,832 |
-| TypeScript/TSX lines of code | 5,733 |
-| E2E test lines | 2,735 |
-| **Total lines of code** | **~31,300** |
-| Backend modules | 14 API routers, 16 services, 4 middleware, 2 core |
-| Frontend pages | 22 routes (21 components) |
-| Frontend UI components | 15 shadcn/ui components |
+| Python lines of code | ~13,050 |
+| TypeScript/TSX lines of code | ~5,500 |
+| E2E test lines | ~2,463 |
+| **Total lines of code** | **~21,983** |
+| Backend modules | 15 API routers, 18 service files (inc. audit/, policy/, predicate_policy, contradiction_detection), 4 middleware, 2 core |
+| Frontend pages | 21 pages |
+| Frontend UI components | 15 shadcn/ui components + Sidebar |
 | Feature hooks | 7 custom hooks |
-| Database tables | 23 models |
-| Alembic migrations | 12 |
+| Global hooks | 5 hooks (AppShell, AuthRedirect, useAuth, useSSE, useTheme) |
+| Database tables | 24 models |
+| Alembic migrations | 13 |
 
 ---
 
@@ -56,10 +57,10 @@ app/
   __init__.py              # Package marker
   main.py                  # FastAPI app, middleware, routers, health checks (279 lines)
   db.py                    # SQLAlchemy engine, session factory, migrations (46 lines)
-  models.py                # 23 SQLAlchemy ORM models (838 lines)
+  models.py                # 24 SQLAlchemy ORM models (880 lines)
   schemas.py               # Pydantic request/response schemas (602 lines)
 
-  api/                     # HTTP endpoint routers (14 routers, 81 endpoints)
+  api/                     # HTTP endpoint routers (14 routers, 78 endpoints)
     __init__.py            # Package marker
     auth.py                # Registration, login, refresh, logout, me (265 lines)
     workspace.py           # Members, invitations, workspace CRUD (447 lines)
@@ -88,7 +89,7 @@ app/
     rbac.py                # Role-based access control (140 lines)
     tenancy.py             # Cross-tenant isolation, TenantContext (140 lines)
 
-  services/                # Business logic layer (16 services)
+  services/                # Business logic layer (18 services)
     audit.py               # Audit event constants (emitter wrapper) (305 lines)
     audit/                 # Audit service package
       __init__.py          # Re-exports
@@ -102,7 +103,7 @@ app/
     m2_facts.py            # M2: Fact + decision extraction (177 lines)
     m3_temporal.py         # M3: Fact/decision supersession (202 lines)
     m4_graph.py            # M4: Graph node/edge extraction + persistence (192 lines)
-    m5_retrieval.py        # M5: Multi-factor ranking (BM25, recency, authority, graph) (294 lines)
+    m5_retrieval.py        # M5: Multi-factor ranking + Phase 3 reranking (344 lines)
     memory.py              # Memory service: governed access, policy enforcement (1045 lines)
     object_storage.py      # Unified storage interface (141 lines)
     object_storage_s3.py   # AWS S3 backend (84 lines)
@@ -114,7 +115,10 @@ app/
       engine.py            # PolicyEngine: rule evaluation
       evaluator.py         # RBAC policy generator
       repository.py        # PolicyRepository for DB
+    predicate_policy.py    # Predicate conflict policy engine (315 lines)
+    contradiction_detection.py # Phase 5: contradiction detection (380 lines)
     retrieval.py           # Hybrid vector + keyword retrieval (121 lines)
+    reranking.py           # Phase 3: LLM-based retrieval reranking (280 lines)
     tools.py               # Function calling tools for LLM (473 lines)
 ```
 
@@ -138,7 +142,7 @@ app/
   ├── db.py                      ← Engine, session factory, init_db()
   │     └── Base                 ← DeclarativeBase for all models
   │
-  ├── models.py                  ← 23 SQLAlchemy models
+  ├── models.py                  ← 24 SQLAlchemy models
   │
   ├── schemas.py                 ← Pydantic schemas (request/response)
   │
@@ -152,23 +156,23 @@ app/
   │     ├── rbac.py              ← Role permission matrix
   │     └── tenancy.py           ← JWT → TenantContext
   │
-  ├── api/                       ← 14 routers (81 endpoints)
+  ├── api/                       ← 14 routers (78 endpoints)
   │     ├── auth.py              ← 6 endpoints
-  │     ├── workspace.py         ← 4 endpoints
-  │     ├── projects.py          ← 3 endpoints
-  │     ├── sessions.py          ← 3 endpoints
-  │     ├── chat.py              ← 3 endpoints
-  │     ├── memory.py            ← 2 endpoints
-  │     ├── ingest.py            ← 3 endpoints (plus facts, decisions, graph, search)
-  │     ├── provenance.py        ← 2 endpoints
+  │     ├── workspace.py         ← 14 endpoints
+  │     ├── projects.py          ← 5 endpoints
+  │     ├── sessions.py          ← 6 endpoints
+  │     ├── chat.py              ← 2 endpoints
+  │     ├── memory.py            ← 6 endpoints
+  │     ├── ingest.py            ← 14 endpoints
+  │     ├── provenance.py        ← 3 endpoints
   │     ├── dashboard.py         ← 2 endpoints
-  │     ├── feedback.py          ← 2 endpoints
-  │     ├── api_keys.py          ← 3 endpoints
-  │     ├── storage.py           ← 2 endpoints
-  │     ├── policy.py            ← 2 endpoints
-  │     └── audit.py             ← 2 endpoints
+  │     ├── feedback.py          ← 3 endpoints
+  │     ├── api_keys.py          ← 4 endpoints
+  │     ├── storage.py           ← 3 endpoints
+  │     ├── policy.py            ← 7 endpoints
+  │     └── audit.py             ← 3 endpoints
   │
-  └── services/                  ← 16 services
+  └── services/                  ← 18 services
         ├── audit/               ← Event constants, repository, buffered service
         ├── pipeline.py          ← M0-M5 orchestration
         ├── connectors.py        ← 7 format parsers + registry
@@ -350,7 +354,7 @@ tests/
 | `test_golden_dataset.py` | 3 | Golden dataset | — |
 | `test_sprint7_integration.py` | 3 | Sprint 7 integration | — |
 
-**Total: 40 test files, ~670 tests pass (1 environmental: missing `openai` package)**
+**Total: 38 test files, ~670 tests pass (1 environmental: missing `openai` package)**
 
 ---
 
@@ -377,8 +381,8 @@ tests/
 ```
 frontend/
   src/
-    app/                          # Next.js App Router (22 routes)
-      layout.tsx                  # Root layout: ThemeProvider → AuthProvider → AppShell (34 lines)
+    app/                          # Next.js App Router (21 pages)
+      layout.tsx                  # Root layout: ThemeProvider → AuthProvider → AppShell (33 lines)
       page.tsx                    # Landing page (public)
       auth/
         login/page.tsx            # Sign in (public)
@@ -409,7 +413,7 @@ frontend/
         storage/page.tsx          # Storage config
 
     components/
-      Sidebar.tsx                 # Responsive navigation sidebar (global + project) (88 lines)
+      Sidebar.tsx                 # Responsive navigation sidebar (global + project) (181 lines)
       ui/                         # shadcn/ui component library (15 components)
         Badge.tsx                 # Status/color indicator
         Card.tsx                  # Content card
@@ -427,7 +431,6 @@ frontend/
         Toast.tsx                 # Notification
         Tooltip.tsx               # Hover tooltip
         index.ts                  # Barrel export
-        useClipboard.ts           # Clipboard hook
 
     features/                     # Feature-specific hooks (7 hooks)
       apiKeys/useApiKeys.ts       # API key CRUD state
@@ -452,10 +455,10 @@ frontend/
     types/
       api.ts                      # TypeScript interfaces (203 lines)
 
-  e2e/                            # Playwright E2E tests (10 files)
+  e2e/                            # Playwright E2E tests (9 active spec files)
     global-setup.ts              # Browser launch config
     test-helpers.ts              # Shared fixtures, API key setup
-    remaining-contracts.spec.ts  # 120 tests — network contracts, responsive, a11y
+    remaining-contracts.spec.ts  # 104 tests — network contracts, responsive, a11y
     ui-certification.spec.ts     # 22 tests — UI rendering, network contracts
     search-chat-certification.spec.ts # 19 tests — search + chat flows
     frontend-journey.spec.ts     # 4 tests — full user journeys
@@ -463,7 +466,6 @@ frontend/
     api-e2e.spec.ts              # 14 tests — direct API tests
     auth.spec.ts                 # 7 tests — auth flows
     dashboard.spec.ts            # 3 tests — dashboard rendering
-    _r3-route-sweep.spec.ts      # 22 tests — route sweep (R3 verification)
     _archive/                    # Archived diagnostic tests
       debug-auth.spec.ts
       test-diag.spec.ts
@@ -546,7 +548,7 @@ page components (app/*/page.tsx)
 
 | File | Lines | Category |
 |---|---|---|
-| `app/models.py` | 838 | Data layer |
+| `app/models.py` | 835 | Data layer |
 | `app/schemas.py` | 602 | Data layer |
 | `app/services/memory.py` | 1045 | Service layer |
 | `app/services/connectors.py` | 760 | Service layer |
@@ -564,7 +566,7 @@ page components (app/*/page.tsx)
 | `app/services/pipeline.py` | 238 | Service layer |
 | `app/services/m3_temporal.py` | 202 | Service layer |
 | `app/main.py` | 279 | Framework |
-| `app/services/audit/service.py` | 305 | Service layer |
+| `app/services/audit/service.py` | 318 | Service layer |
 | `app/core/config.py` | 166 | Core |
 | `app/services/m2_facts.py` | 177 | Service layer |
 | `app/api/audit.py` | 192 | API layer |
@@ -601,7 +603,7 @@ page components (app/*/page.tsx)
 | `src/hooks/AppShell.tsx` | — | Layout wrapper |
 | `src/hooks/AuthRedirect.tsx` | — | Route guard |
 | `src/hooks/useSSE.tsx` | — | SSE |
-| `src/components/Sidebar.tsx` | 88 | Navigation |
+| `src/components/Sidebar.tsx` | 181 | Navigation |
 | `src/features/*/use*.ts` | — | Feature hooks (7 files) |
 | `src/app/*/page.tsx` | — | Page components (21 files) |
 | `src/components/ui/*.tsx` | — | UI components (15 files) |

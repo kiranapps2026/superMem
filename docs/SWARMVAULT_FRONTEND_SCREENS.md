@@ -113,7 +113,7 @@ frontend/src/
       storage/page.tsx        ← Protected settings
   components/
     Sidebar.tsx               ← Global navigation
-    ui/                       ← 14 shadcn/ui components
+    ui/                       ← 14 UI components + 1 hook (useClipboard)
   features/
     apiKeys/useApiKeys.ts     ← Custom hook
     chat/useChat.ts           ← Custom hook
@@ -124,7 +124,6 @@ frontend/src/
     search/useSearch.ts       ← Custom hook
   hooks/
     AppShell.tsx              ← Shell wrapper
-    AppShell...               ← (not present)
     AuthRedirect.tsx          ← Route guard
     useAuth.tsx               ← Auth context
     useSSE.tsx                ← Server-sent events
@@ -403,7 +402,7 @@ All feature hooks follow this pattern for consistency.
 | `/settings/profile` | AppShell | Protected | `ProfilePage` | app/settings/profile/page.tsx |
 | `/settings/storage` | AppShell | Protected | `StoragePage` | app/settings/storage/page.tsx |
 
-**22 routes (3 public + 19 protected).**
+**21 pages (3 public + 18 protected).**
 
 ### 7.2 Navigation Structure
 
@@ -461,10 +460,10 @@ All feature hooks follow this pattern for consistency.
 
 | Aspect | Detail | Source |
 |---|---|---|
-| Framework | Next.js 15.5.24 | package.json |
+| Framework | Next.js 15 (package.json: ^15.0.0) | package.json |
 | Build command | `npm run build` | package.json |
 | Output | `.next/` directory | — |
-| Turbopack | Dev server | next.config.js |
+| Build tool | Webpack (default) | next.config.js |
 | Lint | `npm run lint` | ESLint |
 | Type check | `npx tsc --noEmit` | TypeScript |
 | Environment | `.env` (root), `.env.local`, `.env.development` | — |

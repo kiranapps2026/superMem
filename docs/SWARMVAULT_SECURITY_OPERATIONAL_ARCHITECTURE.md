@@ -522,7 +522,7 @@ async def global_exception_handler(request, exc):
 - `get_by_request_id()`: Correlation lookup by request ID
 - `get_by_correlation_id()`: Chain correlation by correlation ID
 
-### Model (`app/models.py:788-838`)
+### Model (`app/models.py:786-835`)
 
 `AuditEvent` table with 21 fields, 6 indexes:
 - Composite: `tenant_id + timestamp`, `principal_id + timestamp`, `resource_type + timestamp`, `correlation_id + timestamp`

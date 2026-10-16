@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
+import uuid
 from app.models import Tenant, User, Workspace, WorkspaceMember
 from app.db import get_db
 from app.core.config import settings
@@ -18,6 +19,8 @@ class TenantContext:
     workspace_name: str | None = None
     role: str = "viewer"
     user_id: str | None = None
+    trace_id: str | None = None
+    correlation_id: str | None = None
 
 
 def _selectinload_workspace():
@@ -121,6 +124,8 @@ async def get_tenant_context(
         workspace_name=workspace.name,
         role=membership.role,
         user_id=user.id,
+        trace_id=request.headers.get("X-Request-ID") or str(uuid.uuid4()),
+        correlation_id=request.headers.get("X-Correlation-ID"),
     )
 
 
