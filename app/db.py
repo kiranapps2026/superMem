@@ -40,6 +40,6 @@ def _alembic_config() -> AlembicConfig:
 async def init_db():
     """Apply all pending migrations to the database."""
     import asyncio
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     cfg = _alembic_config()
     await loop.run_in_executor(None, lambda: command.upgrade(cfg, "head"))

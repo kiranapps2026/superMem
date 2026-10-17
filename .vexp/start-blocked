@@ -1,0 +1,3 @@
+vexp: concurrent-workspace cap reached (2 live daemons; plan 'free' allows 1).
+Live workspaces: c:\users\administrator\documents\superragapp
+Stop one with `vexp stop <workspace>`, or for fleet/automated use the SDK line has no cap: https://vexp.dev/sdk

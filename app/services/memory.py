@@ -85,6 +85,11 @@ class MemoryRecord:
     value: Any = None
     content: str | None = None  # free-form content (for sessions, etc.)
 
+    # Source provenance (Phase 4 — closes the "created_at only" gap)
+    source_id: str | None = None
+    source_session_id: str | None = None
+    source_message_id: str | None = None
+
     # Provenance
     authority: dict[str, Any] = field(default_factory=dict)
     confidence: float = 0.7
@@ -212,11 +217,14 @@ class MemoryService:
         """Persist a MemoryRecord to PostgreSQL."""
         model = MemoryModel(
             id=record.memory_id,
-            tenant_id=record.tenant_id or record.workspace_id or "",  # FIX: include tenant_id
+            tenant_id=record.tenant_id or record.workspace_id or "",
             workspace_id=record.workspace_id or "",
             user_id=record.user_id or "",
             agent_id=record.agent_id,
             run_id=record.run_id,
+            source_id=record.source_id,
+            source_session_id=record.source_session_id,
+            source_message_id=record.source_message_id,
             project_id=record.project_id,
             memory_type=self._type_mapper.to_vault_type(record.memory_type),
             content=record.content or record.subject,
@@ -224,7 +232,6 @@ class MemoryService:
             authority=record.authority.get("score", 1.0) if isinstance(record.authority, dict) else 1.0,
             temporal_status="current" if record.status == "active" else record.status,
         )
-        # Build extra_metadata from system fields + user-provided fields
         user_meta = record.user_metadata or {}
         meta: dict[str, Any] = {
             "predicate": record.predicate,

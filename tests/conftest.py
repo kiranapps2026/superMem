@@ -1,3 +1,5 @@
+# NOTE: pytest must be run via scripts/run-tests.ps1 so that DATABASE_URL
+# points at the test database before alembic/env.py imports settings.
 """Test fixtures for SwarmVault API tests."""
 
 from __future__ import annotations

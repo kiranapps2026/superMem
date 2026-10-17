@@ -4,7 +4,7 @@ import { FactItem } from '@/types/api';
 import { apiGet } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
-import { GitBranch, Plus } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -63,7 +63,10 @@ export default function FactsPage() {
           <div key={f.id} className="bg-[var(--sv-bg-raised)] border border-[var(--sv-border-default)] rounded-lg p-4 hover:border-[var(--sv-accent)]/30 transition-colors">
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm text-[var(--sv-text-primary)] leading-relaxed">{f.content}</p>
-              <span className="text-xs text-[var(--sv-text-tertiary)] shrink-0">{Math.round(f.confidence * 100)}%</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-[var(--sv-text-tertiary)]">Conf: {Math.round(f.confidence * 100)}%</span>
+                <span className="text-xs text-[var(--sv-text-disabled)]">Auth: {Math.round(f.authority * 100)}%</span>
+              </div>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Badge category="evidence" value={f.source_id ? 'PROVEN' : 'INGESTED'} size="sm" />

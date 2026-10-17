@@ -1,0 +1,289 @@
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Administrator\Documents\SwarmVaultwebapp\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\package-lock.json
+[WebServer] 
+
+
+Running 203 tests using 1 worker
+
+[1/203] [chromium] › e2e\api-e2e.spec.ts:59:7 › Golden Journey › register -> login -> workspace -> project -> upload -> ingest -> search -> chat -> provenance
+[2/203] [chromium] › e2e\api-e2e.spec.ts:113:7 › Authentication › register creates new user
+[3/203] [chromium] › e2e\api-e2e.spec.ts:121:7 › Authentication › login returns access and refresh tokens
+[4/203] [chromium] › e2e\api-e2e.spec.ts:132:7 › Authentication › login rejects wrong password
+[5/203] [chromium] › e2e\api-e2e.spec.ts:141:7 › Authentication › protected endpoint rejects missing token
+[6/203] [chromium] › e2e\api-e2e.spec.ts:152:7 › Tenant Isolation › tenant A cannot see tenant B data
+[7/203] [chromium] › e2e\api-e2e.spec.ts:203:7 › Connectors › ChatGPT connector uploads successfully
+[8/203] [chromium] › e2e\api-e2e.spec.ts:214:7 › Connectors › Claude connector uploads successfully
+[9/203] [chromium] › e2e\api-e2e.spec.ts:225:7 › Connectors › JSONL connector uploads successfully
+[10/203] [chromium] › e2e\api-e2e.spec.ts:242:7 › Security - Prompt Injection › malicious content stored as data only
+[11/203] [chromium] › e2e\api-e2e.spec.ts:278:7 › Error Handling › malformed body returns 422
+[12/203] [chromium] › e2e\api-e2e.spec.ts:283:7 › Error Handling › nonexistent endpoint returns 404
+[13/203] [chromium] › e2e\api-e2e.spec.ts:294:7 › Health › liveness returns alive
+[14/203] [chromium] › e2e\api-e2e.spec.ts:300:7 › Health › readiness returns ready
+[15/203] [chromium] › e2e\auth.spec.ts:11:7 › Authentication Pages › login page renders with form elements
+[16/203] [chromium] › e2e\auth.spec.ts:20:7 › Authentication Pages › register page link is accessible
+[17/203] [chromium] › e2e\auth.spec.ts:26:7 › Authentication Pages › login with invalid credentials shows error
+[18/203] [chromium] › e2e\auth.spec.ts:38:7 › Authentication Pages › login with empty fields validates
+[19/203] [chromium] › e2e\auth.spec.ts:48:7 › Authentication Pages › register page renders
+[20/203] [chromium] › e2e\auth.spec.ts:57:7 › Authentication Pages › register with mismatched passwords shows error
+[21/203] [chromium] › e2e\auth.spec.ts:68:7 › Authentication Pages › login link on register page works
+[22/203] [chromium] › e2e\dashboard.spec.ts:6:7 › Dashboard Page › unauthenticated access redirects to login
+[23/203] [chromium] › e2e\dashboard.spec.ts:12:7 › Dashboard Page › Projects page unauthenticated access redirects
+[24/203] [chromium] › e2e\dashboard.spec.ts:18:7 › Dashboard Page › Settings page unauthenticated access redirects
+[25/203] [chromium] › e2e\frontend-journey.spec.ts:47:7 › Golden Journey — Frontend UI › full journey: dashboard -> create project -> navigate pages
+[26/203] [chromium] › e2e\frontend-journey.spec.ts:81:7 › Golden Journey — Frontend UI › sidebar navigation is present and links work
+[27/203] [chromium] › e2e\frontend-journey.spec.ts:94:7 › Golden Journey — Frontend UI › logout redirects to login
+[28/203] [chromium] › e2e\frontend-journey.spec.ts:109:7 › Golden Journey — Frontend UI › unauthenticated access redirects to login
+[29/203] [chromium] › e2e\golden-journey.spec.ts:38:7 › Golden Journey › register → login → workspace → project → upload → ingestion → search → chat → evidence → provenance
+[30/203] [chromium] › e2e\golden-journey.spec.ts:82:7 › Golden Journey › register creates new user
+[31/203] [chromium] › e2e\golden-journey.spec.ts:94:7 › Golden Journey › login returns tokens
+[32/203] [chromium] › e2e\golden-journey.spec.ts:107:7 › Golden Journey › login rejects wrong password
+[33/203] [chromium] › e2e\golden-journey.spec.ts:118:7 › Golden Journey › protected endpoint rejects missing token
+[34/203] [chromium] › e2e\golden-journey.spec.ts:123:7 › Golden Journey › tenant A and B are isolated
+[35/203] [chromium] › e2e\golden-journey.spec.ts:143:7 › Golden Journey › ChatGPT connector normalizes correctly
+[36/203] [chromium] › e2e\golden-journey.spec.ts:155:7 › Golden Journey › Claude connector normalizes correctly
+[37/203] [chromium] › e2e\golden-journey.spec.ts:163:7 › Golden Journey › JSONL connector normalizes correctly
+[38/203] [chromium] › e2e\golden-journey.spec.ts:171:7 › Golden Journey › malicious content stored as data, not executed
+[39/203] [chromium] › e2e\golden-journey.spec.ts:179:7 › Golden Journey › malformed JSON returns 422
+[40/203] [chromium] › e2e\golden-journey.spec.ts:188:7 › Golden Journey › nonexistent endpoint returns 404
+[41/203] [chromium] › e2e\golden-journey.spec.ts:193:7 › Golden Journey › liveness
+[42/203] [chromium] › e2e\golden-journey.spec.ts:198:7 › Golden Journey › readiness
+[43/203] [chromium] › e2e\remaining-contracts.spec.ts:61:7 › Timeline Network Contract › Timeline API: GET /api/v1/ingest/timeline with project_id returns 200
+[44/203] [chromium] › e2e\remaining-contracts.spec.ts:71:7 › Timeline Network Contract › Timeline page renders heading
+[45/203] [chromium] › e2e\remaining-contracts.spec.ts:76:7 › Timeline Network Contract › Timeline page has empty state
+[46/203] [chromium] › e2e\remaining-contracts.spec.ts:81:7 › Timeline Network Contract › Timeline vertical slice — items are sorted by timestamp descending
+[47/203] [chromium] › e2e\remaining-contracts.spec.ts:98:7 › Timeline Network Contract › Timeline vertical slice — items contain mixed types (fact, decision, memory)
+[48/203] [chromium] › e2e\remaining-contracts.spec.ts:114:7 › Sessions Network Contract › Sessions API: GET /api/v1/sessions/ with project_id returns 200
+[49/203] [chromium] › e2e\remaining-contracts.spec.ts:123:7 › Sessions Network Contract › Sessions page renders heading
+[50/203] [chromium] › e2e\remaining-contracts.spec.ts:128:7 › Sessions Network Contract › Sessions page has empty state
+[51/203] [chromium] › e2e\remaining-contracts.spec.ts:133:7 › Sessions Network Contract › Sessions vertical slice — API returns correct schema with limit and offset
+[52/203] [chromium] › e2e\remaining-contracts.spec.ts:149:7 › Sessions Network Contract › Sessions vertical slice — empty project returns empty array
+[53/203] [chromium] › e2e\remaining-contracts.spec.ts:166:7 › Graph Network Contract › Graph API: GET /api/v1/ingest/graph returns 200
+[54/203] [chromium] › e2e\remaining-contracts.spec.ts:176:7 › Graph Network Contract › Graph page renders heading
+[55/203] [chromium] › e2e\remaining-contracts.spec.ts:181:7 › Graph Network Contract › Graph page has empty state
+[56/203] [chromium] › e2e\remaining-contracts.spec.ts:186:7 › Graph Network Contract › Graph vertical slice — API returns { nodes, edges } schema
+[57/203] [chromium] › e2e\remaining-contracts.spec.ts:203:7 › Graph Network Contract › Graph vertical slice — edges reference valid node IDs
+[58/203] [chromium] › e2e\remaining-contracts.spec.ts:223:7 › Provenance Network Contract › Provenance API: GET /api/v1/provenance/ with project_id returns 200
+[59/203] [chromium] › e2e\remaining-contracts.spec.ts:232:7 › Provenance Network Contract › Provenance page renders heading
+[60/203] [chromium] › e2e\remaining-contracts.spec.ts:237:7 › Provenance Network Contract › Provenance page has empty state
+[61/203] [chromium] › e2e\remaining-contracts.spec.ts:242:7 › Provenance Network Contract › Provenance vertical slice — API returns correct schema
+[62/203] [chromium] › e2e\remaining-contracts.spec.ts:262:7 › Provenance Network Contract › Provenance vertical slice — requires authentication
+[63/203] [chromium] › e2e\remaining-contracts.spec.ts:270:7 › Provenance Detail and Chain › Provenance detail endpoint returns record by ID
+[64/203] [chromium] › e2e\remaining-contracts.spec.ts:289:7 › Provenance Detail and Chain › Provenance filters by session_id
+[65/203] [chromium] › e2e\remaining-contracts.spec.ts:304:7 › Provenance Detail and Chain › Provenance memory expansion endpoint exists
+[66/203] [chromium] › e2e\remaining-contracts.spec.ts:319:7 › Provenance Detail and Chain › Provenance detail returns 404 for unknown ID
+[67/203] [chromium] › e2e\remaining-contracts.spec.ts:330:7 › Graph Deep Certification › Graph supports project_id filtering
+[68/203] [chromium] › e2e\remaining-contracts.spec.ts:340:7 › Graph Deep Certification › Graph supports include_historical param
+[69/203] [chromium] › e2e\remaining-contracts.spec.ts:351:7 › Graph Deep Certification › Graph nodes contain required backend fields
+[70/203] [chromium] › e2e\remaining-contracts.spec.ts:368:7 › Graph Deep Certification › Graph edges contain required backend fields
+[71/203] [chromium] › e2e\remaining-contracts.spec.ts:385:7 › Graph Deep Certification › Graph node_type values are from backend vocabulary
+[72/203] [chromium] › e2e\remaining-contracts.spec.ts:400:7 › Graph Deep Certification › Graph empty project returns empty nodes and edges
+[73/203] [chromium] › e2e\remaining-contracts.spec.ts:414:7 › Graph Deep Certification › Graph rejects without auth
+[74/203] [chromium] › e2e\remaining-contracts.spec.ts:422:7 › Graph UI Interactions › Graph empty state renders when no data exists
+[75/203] [chromium] › e2e\remaining-contracts.spec.ts:430:7 › Graph UI Interactions › Graph page renders detail panel or empty state
+[76/203] [chromium] › e2e\remaining-contracts.spec.ts:436:7 › Graph UI Interactions › Graph page shows node type badge when nodes exist
+[77/203] [chromium] › e2e\remaining-contracts.spec.ts:446:7 › Graph UI Interactions › Graph empty project has no horizontal overflow
+[78/203] [chromium] › e2e\remaining-contracts.spec.ts:455:7 › Cross-Page Knowledge Chain › Chain: Search → Memory → Provenance — memory IDs in search results
+[79/203] [chromium] › e2e\remaining-contracts.spec.ts:471:7 › Cross-Page Knowledge Chain › Chain: Session → Timeline — session created_at appears in timeline
+[80/203] [chromium] › e2e\remaining-contracts.spec.ts:492:7 › Cross-Page Knowledge Chain › Chain: Memory → Facts → Decisions — identifiers are distinct types
+[81/203] [chromium] › e2e\remaining-contracts.spec.ts:510:7 › Sessions Project-Filter Honesty › Sessions list endpoint does NOT filter by project_id on backend
+[82/203] [chromium] › e2e\remaining-contracts.spec.ts:537:7 › Sessions Project-Filter Honesty › Sessions page communicates workspace scope, not project scope
+[83/203] [chromium] › e2e\remaining-contracts.spec.ts:546:7 › Responsive Certification › Timeline heading visible at desktop (1440x900)
+[84/203] [chromium] › e2e\remaining-contracts.spec.ts:552:7 › Responsive Certification › Timeline heading visible at mobile (390x844)
+[85/203] [chromium] › e2e\remaining-contracts.spec.ts:558:7 › Responsive Certification › Sessions heading visible at tablet (768x1024)
+[86/203] [chromium] › e2e\remaining-contracts.spec.ts:564:7 › Responsive Certification › Graph heading visible at mobile (390x844)
+[87/203] [chromium] › e2e\remaining-contracts.spec.ts:570:7 › Responsive Certification › Dashboard heading visible at mobile (390x844)
+[88/203] [chromium] › e2e\remaining-contracts.spec.ts:576:7 › Responsive Certification › No horizontal overflow at mobile (390x844) on Timeline
+[89/203] [chromium] › e2e\remaining-contracts.spec.ts:584:7 › Responsive Certification › No horizontal overflow at mobile (390x844) on Dashboard
+[90/203] [chromium] › e2e\remaining-contracts.spec.ts:595:7 › Accessibility Regression › Sessions page has correct heading hierarchy
+[91/203] [chromium] › e2e\remaining-contracts.spec.ts:601:7 › Accessibility Regression › Graph page has correct heading hierarchy
+[92/203] [chromium] › e2e\remaining-contracts.spec.ts:607:7 › Accessibility Regression › Provenance page has correct heading hierarchy
+[93/203] [chromium] › e2e\remaining-contracts.spec.ts:613:7 › Accessibility Regression › Timeline page has correct heading hierarchy
+[94/203] [chromium] › e2e\remaining-contracts.spec.ts:619:7 › Accessibility Regression › No horizontal overflow on Sessions page
+[95/203] [chromium] › e2e\remaining-contracts.spec.ts:625:7 › Accessibility Regression › No horizontal overflow on Graph page
+[96/203] [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order
+  1) [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      648 |     const hasPassword = focusOrder.some(f => f.includes('input') && f.includes('password'));
+      649 |     const hasSubmit = focusOrder.some(f => f.includes('button'));
+    > 650 |     expect(hasEmail || hasPassword || hasSubmit).toBe(true);
+          |                                                  ^
+      651 |   });
+      652 |
+      653 |   test('Login form: Enter submits from password field', async ({ page }) => {
+        at C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\e2e\remaining-contracts.spec.ts:650:50
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\remaining-contracts-Keyboa-37073-il-password-submit-in-order-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\remaining-contracts-Keyboa-37073-il-password-submit-in-order-chromium\error-context.md
+
+
+[97/203] [chromium] › e2e\remaining-contracts.spec.ts:653:7 › Keyboard Accessibility › Login form: Enter submits from password field
+[98/203] [chromium] › e2e\remaining-contracts.spec.ts:667:7 › Keyboard Accessibility › Chat page: Enter sends message, Shift+Enter adds line
+[99/203] [chromium] › e2e\remaining-contracts.spec.ts:681:7 › Keyboard Accessibility › Sidebar: Tab navigates to all navigation links
+[100/203] [chromium] › e2e\remaining-contracts.spec.ts:689:7 › Keyboard Accessibility › Modal (evidence dialog): Escape closes modal, focus returns to trigger
+[101/203] [chromium] › e2e\remaining-contracts.spec.ts:706:7 › Visual Evidence Screenshots › Dashboard renders correctly at desktop
+[102/203] [chromium] › e2e\remaining-contracts.spec.ts:714:7 › Visual Evidence Screenshots › Dashboard renders correctly at mobile
+[103/203] [chromium] › e2e\remaining-contracts.spec.ts:722:7 › Visual Evidence Screenshots › Timeline renders correctly at desktop
+[104/203] [chromium] › e2e\remaining-contracts.spec.ts:730:7 › Visual Evidence Screenshots › Timeline renders correctly at mobile
+[105/203] [chromium] › e2e\remaining-contracts.spec.ts:738:7 › Visual Evidence Screenshots › Sessions renders correctly at tablet
+[106/203] [chromium] › e2e\remaining-contracts.spec.ts:746:7 › Visual Evidence Screenshots › Graph renders correctly at desktop
+[107/203] [chromium] › e2e\remaining-contracts.spec.ts:754:7 › Visual Evidence Screenshots › Graph renders correctly at mobile
+[108/203] [chromium] › e2e\remaining-contracts.spec.ts:762:7 › Visual Evidence Screenshots › Memory page renders correctly at desktop
+[109/203] [chromium] › e2e\remaining-contracts.spec.ts:770:7 › Visual Evidence Screenshots › Settings renders correctly at desktop
+[110/203] [chromium] › e2e\remaining-contracts.spec.ts:781:7 › Network and Console Cleanliness › Memory page loads with no console errors
+[111/203] [chromium] › e2e\remaining-contracts.spec.ts:790:7 › Network and Console Cleanliness › Facts page loads with no console errors
+  2) [chromium] › e2e\remaining-contracts.spec.ts:790:7 › Network and Console Cleanliness › Facts page loads with no console errors 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 2
+
+      794 |     await expect(page.locator('h1:has-text("Facts")')).toBeVisible({ timeout: 10000 });
+      795 |     await page.waitForTimeout(500);
+    > 796 |     expect(errors.length).toBe(0);
+          |                           ^
+      797 |   });
+      798 |
+      799 |   test('Decisions page loads with no console errors', async ({ page }) => {
+        at C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\e2e\remaining-contracts.spec.ts:796:27
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\remaining-contracts-Networ-5742a-oads-with-no-console-errors-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\remaining-contracts-Networ-5742a-oads-with-no-console-errors-chromium\error-context.md
+
+
+[112/203] [chromium] › e2e\remaining-contracts.spec.ts:799:7 › Network and Console Cleanliness › Decisions page loads with no console errors
+  3) [chromium] › e2e\remaining-contracts.spec.ts:799:7 › Network and Console Cleanliness › Decisions page loads with no console errors 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 2
+
+      803 |     await expect(page.locator('h1:has-text("Decisions")')).toBeVisible({ timeout: 10000 });
+      804 |     await page.waitForTimeout(500);
+    > 805 |     expect(errors.length).toBe(0);
+          |                           ^
+      806 |   });
+      807 |
+      808 |   test('Ingest page loads with no console errors', async ({ page }) => {
+        at C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\e2e\remaining-contracts.spec.ts:805:27
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\remaining-contracts-Networ-e3ee8-oads-with-no-console-errors-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\remaining-contracts-Networ-e3ee8-oads-with-no-console-errors-chromium\error-context.md
+
+
+[113/203] [chromium] › e2e\remaining-contracts.spec.ts:808:7 › Network and Console Cleanliness › Ingest page loads with no console errors
+[114/203] [chromium] › e2e\remaining-contracts.spec.ts:817:7 › Network and Console Cleanliness › Settings page loads with no console errors
+[115/203] [chromium] › e2e\remaining-contracts.spec.ts:826:7 › Network and Console Cleanliness › Provenance page loads with no console errors
+[116/203] [chromium] › e2e\remaining-contracts.spec.ts:835:7 › Network and Console Cleanliness › Session detail page loads with no console errors
+[117/203] [chromium] › e2e\remaining-contracts.spec.ts:849:7 › State Semantics › Facts page shows confidence and evidence badge
+[118/203] [chromium] › e2e\remaining-contracts.spec.ts:855:7 › State Semantics › Decisions page shows confidence and temporal badge
+[119/203] [chromium] › e2e\remaining-contracts.spec.ts:861:7 › State Semantics › Provenance page shows model, provider, latency, tokens
+[120/203] [chromium] › e2e\remaining-contracts.spec.ts:867:7 › State Semantics › Timeline shows item_type icons and temporal status badges
+[121/203] [chromium] › e2e\remaining-contracts.spec.ts:873:7 › State Semantics › Session detail shows role icons (user/bot) and timestamps
+[122/203] [chromium] › e2e\remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Memory heading visible at mobile (390x844)
+[123/203] [chromium] › e2e\remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Memory no horizontal overflow at mobile (390x844)
+[124/203] [chromium] › e2e\remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Memory heading visible at tablet (768x1024)
+[125/203] [chromium] › e2e\remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Memory heading visible at desktop (1280x720)
+[126/203] [chromium] › e2e\remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Facts heading visible at mobile (390x844)
+[127/203] [chromium] › e2e\remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Facts no horizontal overflow at mobile (390x844)
+[128/203] [chromium] › e2e\remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Facts heading visible at tablet (768x1024)
+[129/203] [chromium] › e2e\remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Facts heading visible at desktop (1280x720)
+[130/203] [chromium] › e2e\remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Decisions heading visible at mobile (390x844)
+[131/203] [chromium] › e2e\remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Decisions no horizontal overflow at mobile (390x844)
+[132/203] [chromium] › e2e\remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Decisions heading visible at tablet (768x1024)
+[133/203] [chromium] › e2e\remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Decisions heading visible at desktop (1280x720)
+[134/203] [chromium] › e2e\remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Ingest heading visible at mobile (390x844)
+[135/203] [chromium] › e2e\remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Ingest no horizontal overflow at mobile (390x844)
+[136/203] [chromium] › e2e\remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Ingest heading visible at tablet (768x1024)
+[137/203] [chromium] › e2e\remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Ingest heading visible at desktop (1280x720)
+[138/203] [chromium] › e2e\remaining-contracts.spec.ts:893:9 › Expanded Responsive Coverage › Provenance heading visible at mobile (390x844)
+[139/203] [chromium] › e2e\remaining-contracts.spec.ts:899:9 › Expanded Responsive Coverage › Provenance no horizontal overflow at mobile (390x844)
+[140/203] [chromium] › e2e\remaining-contracts.spec.ts:907:9 › Expanded Responsive Coverage › Provenance heading visible at tablet (768x1024)
+[141/203] [chromium] › e2e\remaining-contracts.spec.ts:913:9 › Expanded Responsive Coverage › Provenance heading visible at desktop (1280x720)
+[142/203] [chromium] › e2e\remaining-contracts.spec.ts:920:7 › Expanded Responsive Coverage › Settings heading visible at mobile (390x844)
+[143/203] [chromium] › e2e\remaining-contracts.spec.ts:926:7 › Expanded Responsive Coverage › Settings no horizontal overflow at mobile (390x844)
+[144/203] [chromium] › e2e\remaining-contracts.spec.ts:934:7 › Expanded Responsive Coverage › Dashboard no horizontal overflow at 1280x720
+[145/203] [chromium] › e2e\remaining-contracts.spec.ts:942:7 › Expanded Responsive Coverage › Chat no horizontal overflow at mobile (390x844)
+[146/203] [chromium] › e2e\remaining-contracts.spec.ts:950:7 › Expanded Responsive Coverage › Search no horizontal overflow at mobile (390x844)
+[147/203] [chromium] › e2e\remaining-contracts.spec.ts:961:7 › Identifier Continuity Audit › Project IDs are consistent across navigation
+[148/203] [chromium] › e2e\remaining-contracts.spec.ts:972:7 › Identifier Continuity Audit › Memory IDs returned by API match frontend display format
+[149/203] [chromium] › e2e\remaining-contracts.spec.ts:985:7 › Identifier Continuity Audit › Session IDs are stable across list and detail views
+[150/203] [chromium] › e2e\remaining-contracts.spec.ts:999:7 › Identifier Continuity Audit › Graph node IDs are stable and referenced by edges
+[151/203] [chromium] › e2e\remaining-contracts.spec.ts:1017:7 › Full Regression — Core Pages Render › Dashboard renders without errors
+[152/203] [chromium] › e2e\remaining-contracts.spec.ts:1022:7 › Full Regression — Core Pages Render › Projects page renders without errors
+[153/203] [chromium] › e2e\remaining-contracts.spec.ts:1027:7 › Full Regression — Core Pages Render › Project Search renders without errors
+[154/203] [chromium] › e2e\remaining-contracts.spec.ts:1032:7 › Full Regression — Core Pages Render › Project Memory renders without errors
+[155/203] [chromium] › e2e\remaining-contracts.spec.ts:1037:7 › Full Regression — Core Pages Render › Project Facts renders without errors
+[156/203] [chromium] › e2e\remaining-contracts.spec.ts:1042:7 › Full Regression — Core Pages Render › Project Decisions renders without errors
+[157/203] [chromium] › e2e\remaining-contracts.spec.ts:1047:7 › Full Regression — Core Pages Render › Project Timeline renders without errors
+[158/203] [chromium] › e2e\remaining-contracts.spec.ts:1052:7 › Full Regression — Core Pages Render › Project Graph renders without errors
+[159/203] [chromium] › e2e\remaining-contracts.spec.ts:1057:7 › Full Regression — Core Pages Render › Project Provenance renders without errors
+[160/203] [chromium] › e2e\remaining-contracts.spec.ts:1062:7 › Full Regression — Core Pages Render › Project Sessions renders without errors
+[161/203] [chromium] › e2e\remaining-contracts.spec.ts:1067:7 › Full Regression — Core Pages Render › Project Ingest renders without errors
+[162/203] [chromium] › e2e\remaining-contracts.spec.ts:1072:7 › Full Regression — Core Pages Render › Settings renders without errors
+[163/203] [chromium] › e2e\search-chat-certification.spec.ts:68:7 › Search Browser Certification › Search page renders heading and input
+[164/203] [chromium] › e2e\search-chat-certification.spec.ts:73:7 › Search Browser Certification › Search input has correct placeholder
+[165/203] [chromium] › e2e\search-chat-certification.spec.ts:79:7 › Search Browser Certification › Search filter select is visible
+[166/203] [chromium] › e2e\search-chat-certification.spec.ts:84:7 › Search Browser Certification › Search submit button is visible
+[167/203] [chromium] › e2e\search-chat-certification.spec.ts:89:7 › Search Browser Certification › Search API contract: POST /api/v1/ingest/search returns 200
+[168/203] [chromium] › e2e\search-chat-certification.spec.ts:99:7 › Search Browser Certification › Search with memory_type filter in query params
+[169/203] [chromium] › e2e\search-chat-certification.spec.ts:108:7 › Search Browser Certification › Search empty project returns empty results
+[170/203] [chromium] › e2e\search-chat-certification.spec.ts:117:7 › Search Browser Certification › Search rejects without auth
+[171/203] [chromium] › e2e\search-chat-certification.spec.ts:122:7 › Search Browser Certification › Search console clean on empty results page
+[172/203] [chromium] › e2e\search-chat-certification.spec.ts:133:7 › Search Browser Certification › Search responsive at 768px
+[173/203] [chromium] › e2e\search-chat-certification.spec.ts:139:7 › Search Browser Certification › Search page has error state component (ErrorAlert import)
+[174/203] [chromium] › e2e\search-chat-certification.spec.ts:158:7 › Chat Browser Certification › Chat page renders heading and textarea
+[175/203] [chromium] › e2e\search-chat-certification.spec.ts:164:7 › Chat Browser Certification › Chat page shows empty state
+[176/203] [chromium] › e2e\search-chat-certification.spec.ts:169:7 › Chat Browser Certification › Chat API contract: POST /api/v1/chat/stream returns SSE
+[177/203] [chromium] › e2e\search-chat-certification.spec.ts:185:7 › Chat Browser Certification › Chat rejects without auth
+[178/203] [chromium] › e2e\search-chat-certification.spec.ts:194:7 › Chat Browser Certification › Chat sends message and sees response
+[179/203] [chromium] › e2e\search-chat-certification.spec.ts:205:7 › Chat Browser Certification › Chat console clean on page load
+[180/203] [chromium] › e2e\search-chat-certification.spec.ts:216:7 › Chat Browser Certification › Chat responsive at 768px
+[181/203] [chromium] › e2e\search-chat-certification.spec.ts:222:7 › Chat Browser Certification › Chat page renders with evidence button support
+[182/203] [chromium] › e2e\ui-certification.spec.ts:73:7 › UI Browser Certification - Authenticated › Dashboard renders with stats and project card
+[183/203] [chromium] › e2e\ui-certification.spec.ts:78:7 › UI Browser Certification - Authenticated › Dashboard creates project via New Project form
+[184/203] [chromium] › e2e\ui-certification.spec.ts:87:7 › UI Browser Certification - Authenticated › Projects page lists projects
+[185/203] [chromium] › e2e\ui-certification.spec.ts:93:7 › UI Browser Certification - Authenticated › Chat page renders with empty state
+[186/203] [chromium] › e2e\ui-certification.spec.ts:99:7 › UI Browser Certification - Authenticated › Chat sends message and receives response
+[187/203] [chromium] › e2e\ui-certification.spec.ts:119:7 › UI Browser Certification - Authenticated › Search page renders
+[188/203] [chromium] › e2e\ui-certification.spec.ts:125:7 › UI Browser Certification - Authenticated › Memory page renders
+[189/203] [chromium] › e2e\ui-certification.spec.ts:130:7 › UI Browser Certification - Authenticated › Settings page renders
+[190/203] [chromium] › e2e\ui-certification.spec.ts:135:7 › UI Browser Certification - Authenticated › Ingest page renders with upload form
+[191/203] [chromium] › e2e\ui-certification.spec.ts:141:7 › UI Browser Certification - Authenticated › Facts page renders
+[192/203] [chromium] › e2e\ui-certification.spec.ts:146:7 › UI Browser Certification - Authenticated › Decisions page renders
+[193/203] [chromium] › e2e\ui-certification.spec.ts:159:7 › Search Network Contract › Search sends POST /api/v1/ingest/search with query and limit params
+[194/203] [chromium] › e2e\ui-certification.spec.ts:181:7 › Memory Network Contract › Memory loads via GET /api/v1/memory/ with project_id param
+[195/203] [chromium] › e2e\ui-certification.spec.ts:194:7 › Memory Network Contract › Memory page has filter and structure
+[196/203] [chromium] › e2e\ui-certification.spec.ts:201:7 › Memory Network Contract › Memory vertical slice — API returns correct schema with project_id
+[197/203] [chromium] › e2e\ui-certification.spec.ts:220:7 › Memory Network Contract › Memory vertical slice — filter by memory_type param
+[198/203] [chromium] › e2e\ui-certification.spec.ts:229:7 › Memory Network Contract › Memory vertical slice — filter by temporal_status param
+[199/203] [chromium] › e2e\ui-certification.spec.ts:241:7 › Memory Network Contract › Memory vertical slice — page renders empty state on fresh project
+[200/203] [chromium] › e2e\ui-certification.spec.ts:272:7 › Facts Network Contract › Facts loads via GET /api/v1/ingest/facts with project_id param
+[201/203] [chromium] › e2e\ui-certification.spec.ts:285:7 › Facts Network Contract › Facts page has empty state and subject-predicate-object display
+[202/203] [chromium] › e2e\ui-certification.spec.ts:298:7 › Decisions Network Contract › Decisions loads via GET /api/v1/ingest/decisions with project_id param
+[203/203] [chromium] › e2e\ui-certification.spec.ts:311:7 › Decisions Network Contract › Decisions page has empty state
+  3 failed
+    [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order 
+    [chromium] › e2e\remaining-contracts.spec.ts:790:7 › Network and Console Cleanliness › Facts page loads with no console errors 
+    [chromium] › e2e\remaining-contracts.spec.ts:799:7 › Network and Console Cleanliness › Decisions page loads with no console errors 
+  2 skipped
+  198 passed (9.9m)

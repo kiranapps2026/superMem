@@ -133,6 +133,7 @@ class AuditService:
         self._sinks: list[EventSink] = []
         self._log_sink = logger
         self._buffer: list[AuditEvent] = []
+        self._max_buffer_size = 1000
         self._db_repo: Any = None  # AuditRepository, set by register_db_sink
         self._register_default_sinks()
 
@@ -172,7 +173,9 @@ class AuditService:
                 # Audit must not fail the calling operation
                 pass
 
-        # Buffer for DB persistence
+        # Buffer for DB persistence — drop oldest when bound is reached
+        if len(self._buffer) >= self._max_buffer_size:
+            self._buffer.pop(0)
         self._buffer.append(event)
 
         return event

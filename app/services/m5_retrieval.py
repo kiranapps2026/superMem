@@ -23,6 +23,11 @@ from sqlalchemy import select, func, case, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Fact, Decision, GraphEdge
+from app.services.reranking import RerankingService, RerankingResult
+from app.core.config import settings
+
+
+_reranking_service = RerankingService()
 
 
 @dataclass
@@ -252,9 +257,51 @@ async def retrieve_for_chat(
 ) -> dict[str, Any]:
     """Retrieve context for chat grounding.
 
+    Runs M5 hybrid retrieval, then optionally applies Phase 3 reranking
+    when FEATURE_RERANKING_ENABLED=true. In shadow mode (default), reranking
+    scores are computed and logged but do not affect served context.
+
     Returns formatted context string + provenance chain.
     """
     results = await retrieve_hybrid(db, workspace_id, query, project_id=project_id, limit=limit)
+
+    # Phase 3: Optional reranking
+    reranking_applied = False
+    if settings.feature_reranking_enabled:
+        candidates = [
+            {
+                "item": r.item,
+                "item_type": r.item_type,
+                "content": getattr(r.item, "content", ""),
+                "score": r.score,
+                "confidence": getattr(r.item, "confidence", 1.0),
+                "authority": getattr(r.item, "authority", 1.0),
+                "temporal_status": getattr(r.item, "temporal_status", "current"),
+            }
+            for r in results
+        ]
+        reranked = await _reranking_service.rerank(query, candidates, top_k=limit)
+        reranking_applied = True
+
+        # Replace results with reranked ones, keeping provenance mapping
+        new_results = []
+        for rr in reranked:
+            # Find the original RetrievalResult for provenance
+            orig = next((r for r in results if r.item == rr.item), None)
+            if orig:
+                new_result = RetrievalResult(
+                    item=orig.item,
+                    item_type=orig.item_type,
+                    score=rr.final_score,
+                    factors={**orig.factors, **rr.factors},
+                )
+                # Attach reranking metadata for explainability
+                new_result.retrieval_score = rr.retrieval_score
+                new_result.reranker_score = rr.reranker_score
+                new_result.abstained = rr.abstained
+                new_result.abstention_reason = rr.abstention_reason
+                new_results.append(new_result)
+        results = new_results
 
     context_parts = []
     provenance = []

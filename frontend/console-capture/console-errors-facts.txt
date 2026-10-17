@@ -1,0 +1,45 @@
+In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <a> a 
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary loading={null}>
+        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+          <RedirectBoundary>
+            <RedirectErrorBoundary router={{...}}>
+              <InnerLayoutRouter url="/dashboard" tree={[...]} cacheNode={{lazyData:null, ...}} segmentPath={[...]}>
+                <SegmentViewNode type="page" pagePath="dashboard/...">
+                  <SegmentTrieNode>
+                  <ClientPageRoot Component={function DashboardPage} searchParams={{}} params={{}}>
+                    <DashboardPage params={Promise} searchParams={Promise}>
+                      <div className="max-w-6xl ...">
+                        <div>
+                        <div>
+                        <div>
+                        <div className="grid gap-4...">
+                          <LinkComponent href="/projects/..." className="block roun...">
+>                           <a
+>                             className="block rounded-lg border border-[var(--sv-border-default)] bg-[var(--sv-bg-rai..."
+>                             ref={function}
+>                             onClick={function onClick}
+>                             onMouseEnter={function onMouseEnter}
+>                             onTouchStart={function onTouchStart}
+>                             href="/projects/110fb735-f001-47e1-98bc-144fca08def2"
+>                           >
+                              <div>
+                              <div className="mt-4 flex ...">
+                                <LinkComponent href="/projects/..." className="text-xs te...">
+>                                 <a
+>                                   className="text-xs text-[var(--sv-text-tertiary)] hover:text-[var(--sv-accent)] tr..."
+>                                   ref={function}
+>                                   onClick={function onClick}
+>                                   onMouseEnter={function onMouseEnter}
+>                                   onTouchStart={function onTouchStart}
+>                                   href="/projects/110fb735-f001-47e1-98bc-144fca08def2/chat"
+>                                 >
+                                ...
+                ...
+              ...
+
+<%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. a <a>

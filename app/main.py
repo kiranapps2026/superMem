@@ -15,7 +15,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.db import init_db
 from app.services.audit.service import AuditService
-from app.services.audit.service import AuditService
+
+logger = logging.getLogger("app.main")
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
@@ -271,6 +272,42 @@ async def readiness():
             status_code=503,
             content={"status": "not_ready", "database": "unavailable"},
         )
+
+
+@app.get("/health/embeddings")
+async def embedding_health():
+    """Report embedding backfill progress and model info."""
+    try:
+        from app.services.embeddings import get_model
+        model = get_model()
+        from sqlalchemy import select, func, text
+        from app.models import Memory
+        from app.db import async_session_factory
+        async with async_session_factory() as session:
+            total = await session.execute(
+                select(func.count(Memory.id)).where(Memory.deleted_at.is_(None))
+            )
+            total_count = total.scalar() or 0
+            embedded = await session.execute(
+                select(func.count(Memory.id)).where(
+                    Memory.embedding.isnot(None),
+                    Memory.deleted_at.is_(None),
+                )
+            )
+            embedded_count = embedded.scalar() or 0
+            pct = round(embedded_count / total_count * 100, 1) if total_count > 0 else 100.0
+            return {
+                "status": "ok",
+                "model": model._vectorizer.__class__.__name__ if model._fitted else "hash_fallback",
+                "dimension": model._dimension,
+                "fitted": model._fitted,
+                "total_memories": total_count,
+                "embedded_count": embedded_count,
+                "progress_pct": pct,
+            }
+    except Exception as exc:
+        logger.warning("embedding health check failed: %s", exc)
+        return JSONResponse(status_code=503, content={"status": "error", "detail": str(exc)})
 
 
 @app.get("/health")

@@ -93,7 +93,7 @@ export default function MemoryPage() {
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
                 <Badge variant="muted" size="sm">{item.memory_type.replace('_memory', '')}</Badge>
-                <Badge category="authority" value={item.authority >= 0.8 ? 'VERIFIED' : item.authority >= 0.5 ? 'OBSERVED' : 'INFERRED'} size="sm" />
+                <span className="text-xs text-[var(--sv-text-disabled)]">Authority: {Math.round(item.authority * 100)}%</span>
                 {item.temporal_status && <Badge category="temporal" value={temporalLabel(item.temporal_status)} size="sm" />}
               </div>
               <span className="text-xs text-[var(--sv-text-disabled)]">{new Date(item.created_at).toLocaleString()}</span>

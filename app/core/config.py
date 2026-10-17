@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     llm_retry_backoff: float = 1.0
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    deepseek_api_key: str = ""
 
     # SwarmVault
     swarmvault_url: str = "http://localhost:8000"
@@ -66,6 +67,20 @@ class Settings(BaseSettings):
     s3_secret_key: str = ""
     s3_bucket: str = "swarmvault-uploads"
     s3_region: str = "us-east-1"
+
+    # Embeddings
+    embedding_provider: str = "local"  # local | anthropic | openai
+    embedding_model: str = "tfidf-384"
+    embedding_dimension: int = 384
+    embedding_api_key: str = ""
+
+    # Reranking (Phase 3 — Memory Intelligence Layer)
+    feature_reranking_enabled: bool = False
+    reranking_min_relevance: float = 0.3
+
+    # Contradiction detection (Phase 5)
+    feature_contradiction_detection_enabled: bool = False
+    feature_semantic_contradiction_enabled: bool = False
 
     @model_validator(mode="after")
     def _validate_secret_key(self) -> "Settings":
