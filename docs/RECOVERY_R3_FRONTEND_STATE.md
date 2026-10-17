@@ -163,7 +163,7 @@ uvicorn connected to `swarmvault` (production). `pg_stat_activity` shows 5 conne
 ```
 anthropic_api_key=              (empty)
 openai_api_key=                 (empty)
-deepseek_api_key=sk-d8f4ed57c0794eb5bf74c8de519160df
+deepseek_api_key=(populated; revoked 2026-09-24)
 DATABASE_URL=postgresql+asyncpg://swarmvault:swarmvault@localhost:5432/swarmvault
 ```
 
