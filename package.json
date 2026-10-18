@@ -1,0 +1,18 @@
+{
+  "name": "swarmvault-sprint6",
+  "private": true,
+  "scripts": {
+    "test": "python -m pytest tests/unit/ -q",
+    "test:connectors": "python -m pytest tests/unit/test_connectors.py -q",
+    "test:security": "python -m pytest tests/unit/test_sprint4_security.py -q",
+    "test:fast": "python -m pytest tests/unit/ -q --ignore=tests/unit/test_sprint4_security.py",
+    "e2e": "cd frontend && npx playwright test",
+    "e2e:headed": "cd frontend && npx playwright test --headed",
+    "e2e:debug": "cd frontend && npx playwright test --debug",
+    "build": "cd frontend && npm run build",
+    "lint": "cd frontend && npm run lint"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

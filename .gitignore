@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Test artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/tsconfig.tsbuildinfo
+
+# Runtime data
+storage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Debug/test scratch files (not part of test suite)
+frontend/e2e/debug-*.ts
+frontend/e2e/test-diag*.ts
+frontend/e2e/test-helpers.ts
+frontend/e2e/global-setup.ts
+
+# OS
+Thumbs.db
+.DS_Store
+NUL
+
+# Environment
+.env
+.env.local
+.env.bak
+.env.*.local
+
+# Misc
+*.log
+
+# Claude Code (local to this machine only)
+.claude/

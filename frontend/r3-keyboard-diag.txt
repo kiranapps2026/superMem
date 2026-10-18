@@ -1,0 +1,40 @@
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Administrator\Documents\SwarmVaultwebapp\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\package-lock.json
+[WebServer] 
+
+Running 1 test using 1 worker
+
+KEYBOARD_DIAG focusOrder: ["body","nextjs-portal","body","nextjs-portal","body"]
+KEYBOARD_DIAG pageUrl: http://localhost:3000/auth/login
+KEYBOARD_DIAG hasEmail: false hasPassword: false hasSubmit: false
+  x  1 [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order (2.8s)
+
+
+  1) [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      652 |     console.log('KEYBOARD_DIAG pageUrl:', page.url());
+      653 |     console.log('KEYBOARD_DIAG hasEmail:', hasEmail, 'hasPassword:', hasPassword, 'hasSubmit:', hasSubmit);
+    > 654 |     expect(hasEmail || hasPassword || hasSubmit).toBe(true);
+          |                                                  ^
+      655 |   });
+      656 |
+      657 |   test('Login form: Enter submits from password field', async ({ page }) => {
+        at C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\e2e\remaining-contracts.spec.ts:654:50
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\remaining-contracts-Keyboa-37073-il-password-submit-in-order-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\remaining-contracts-Keyboa-37073-il-password-submit-in-order-chromium\error-context.md
+
+  1 failed
+    [chromium] › e2e\remaining-contracts.spec.ts:634:7 › Keyboard Accessibility › Login form: Tab focuses email, password, submit in order 

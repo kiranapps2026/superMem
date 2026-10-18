@@ -1,0 +1,58 @@
+{
+  "version": "v1",
+  "description": "Retrieval evaluation fixtures for Phase 2 baseline",
+  "categories": {
+    "semantic": {
+      "description": "Queries where meaning matters more than exact keywords",
+      "queries": [
+        {"query": "project deadline changes", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "team member responsibilities", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "API integration status", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    },
+    "factual": {
+      "description": "Exact factual retrieval",
+      "queries": [
+        {"query": "what is the database password", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "who approved the budget", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "when is the deployment", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    },
+    "temporal": {
+      "description": "Queries about time-based facts",
+      "queries": [
+        {"query": "current sprint goal", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "recently changed settings", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "previous decision about auth", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    },
+    "tenant_isolation": {
+      "description": "Queries that must NOT return other workspace data",
+      "queries": [
+        {"query": "secret project details", "relevant_ids": [], "workspace_id": "ws-a"},
+        {"query": "confidential meeting notes", "relevant_ids": [], "workspace_id": "ws-a"}
+      ]
+    },
+    "low_confidence": {
+      "description": "Queries about uncertain or low-confidence memories",
+      "queries": [
+        {"query": "maybe we should try kubernetes", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "possibly migrating to postgres", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    },
+    "contradictory": {
+      "description": "Stub for Phase 5 contradiction detection",
+      "queries": [
+        {"query": "what is our staging environment", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    },
+    "multi_hop": {
+      "description": "Queries requiring multiple reasoning steps",
+      "queries": [
+        {"query": "who owns the project that uses the API we discussed", "relevant_ids": [], "workspace_id": "default"},
+        {"query": "what decisions led to the current deployment strategy", "relevant_ids": [], "workspace_id": "default"}
+      ]
+    }
+  },
+  "total_queries": 16
+}

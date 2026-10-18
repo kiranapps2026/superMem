@@ -1,0 +1,26 @@
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Administrator\Documents\SwarmVaultwebapp\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Administrator\Documents\SwarmVaultwebapp\frontend\package-lock.json
+[WebServer] 
+
+Running 1 test using 1 worker
+
+INITIAL FOCUS: input | id= | class=w-full bg-[var(--sv-bg-raised)] border border-[var(--sv-bord | type=email
+FOCUSABLE ELEMENTS: [
+  "input[type=email] id= class=w-full bg-[var(--sv-bg-raised)] border b tabindex=0 text=\"\" aria=\"\" ph=\"you@example.com\"",
+  "input[type=password] id= class=w-full bg-[var(--sv-bg-raised)] border b tabindex=0 text=\"\" aria=\"\" ph=\"Min 8 characters\"",
+  "button[type=submit] id= class=w-full bg-[var(--sv-accent)] hover:bg-[v tabindex=0 text=\"Sign in\" aria=\"\" ph=\"\"",
+  "a[type=] id= class=text-[var(--sv-accent)] hover:underline tabindex=0 text=\"Create one\" aria=\"\" ph=\"\""
+]
+TAB 1: input[type=password] id= tabindex=0
+TAB 2: button[type=submit] id= tabindex=0
+TAB 3: a[type=] id= tabindex=0
+TAB 4: body[type=] id= tabindex=0
+TAB 5: nextjs-portal[type=] id= tabindex=0
+FULL FOCUS ORDER: ["input[type=password] id= tabindex=0","button[type=submit] id= tabindex=0","a[type=] id= tabindex=0","body[type=] id= tabindex=0","nextjs-portal[type=] id= tabindex=0"]
+  ok 1 [chromium] › e2e\_diag-focus.spec.ts:5:5 › DIAGNOSTIC: login form tab order (5.0s)
+
+  1 passed (17.4s)
